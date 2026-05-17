@@ -1,0 +1,32 @@
+{
+  "air_temp_k": {
+    "min": 295.3,
+    "max": 304.5,
+    "mean": 300.0,
+    "std": 2.0
+  },
+  "process_temp_k": {
+    "min": 305.7,
+    "max": 313.8,
+    "mean": 310.01,
+    "std": 1.48
+  },
+  "rot_speed_rpm": {
+    "min": 1168.0,
+    "max": 2886.0,
+    "mean": 1538.78,
+    "std": 179.28
+  },
+  "torque_nm": {
+    "min": 3.8,
+    "max": 76.6,
+    "mean": 39.99,
+    "std": 9.97
+  },
+  "tool_wear_min": {
+    "min": 0.0,
+    "max": 253.0,
+    "mean": 107.95,
+    "std": 63.65
+  }
+}
