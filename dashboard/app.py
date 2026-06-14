@@ -481,6 +481,28 @@ div[data-testid="metric-container"] [data-testid="stMetricValue"] {
   color: var(--ink-1) !important;
 }
 
+/* Sidebar page-picker selectbox */
+[data-testid="stSidebar"] [data-testid="stSelectbox"] > div > div {
+  border: 1.5px solid #CBD5E1 !important;
+  border-radius: 8px !important;
+  background: #FFFFFF !important;
+  font-size: 0.88rem !important;
+  font-weight: 600 !important;
+  color: #1E293B !important;
+  box-shadow: 0 1px 2px rgba(15,23,42,.05) !important;
+  padding: 2px 6px !important;
+}
+[data-testid="stSidebar"] [data-testid="stSelectbox"] > div > div:hover {
+  border-color: #94A3B8 !important;
+  background: #F1F5F9 !important;
+}
+[data-testid="stSidebar"] [data-testid="stSelectbox"] > div > div > div,
+[data-testid="stSidebar"] [data-testid="stSelectbox"] > div > div span {
+  color: #1E293B !important;
+  font-weight: 600 !important;
+  font-size: 0.88rem !important;
+}
+
 /* ─────────────────────────────────────
    DATAFRAME
 ───────────────────────────────────── */
@@ -1025,11 +1047,35 @@ with st.sidebar:
     )
     st.markdown("---")
 
-    page = st.radio(
-        "Navigation",
-        ["Overview", "How It Works", "Alert Queue", "Explain an Alert", "Accuracy Report"],
+    st.markdown(
+        f'<div class="sb-section">{ICONS["target"]}  Role</div>',
+        unsafe_allow_html=True,
+    )
+    role = st.radio(
+        "Role",
+        ["Data Scientist", "Operator"],
         label_visibility="collapsed",
     )
+
+    st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="sb-section">{ICONS["overview"]}  Page</div>',
+        unsafe_allow_html=True,
+    )
+    if role == "Data Scientist":
+        page = st.selectbox(
+            "Page",
+            ["Overview", "How It Works", "Alert Queue"],
+            label_visibility="collapsed",
+            key="ds_page",
+        )
+    else:
+        page = st.selectbox(
+            "Page",
+            ["Explain an Alert", "Accuracy Report"],
+            label_visibility="collapsed",
+            key="op_page",
+        )
 
     st.markdown("---")
     st.markdown(
