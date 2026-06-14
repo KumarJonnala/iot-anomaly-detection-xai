@@ -1,1 +1,5 @@
 env
+
+# Claude Code local config (contains personal machine paths)
+.claude/
+.mcp.json
