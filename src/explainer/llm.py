@@ -1,7 +1,11 @@
+import os
+
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from .constants import EXPLAINER_MODEL
+
+_OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL')
 
 _SYSTEM_PROMPT = (
     'You are an experienced IoT maintenance analyst. '
@@ -10,7 +14,7 @@ _SYSTEM_PROMPT = (
 )
 
 
-def check_ollama(base_url: str = 'http://localhost:11434') -> bool:
+def check_ollama(base_url: str = _OLLAMA_BASE_URL) -> bool:
     """Return True if Ollama is reachable at base_url."""
     try:
         import urllib.request
@@ -22,7 +26,7 @@ def check_ollama(base_url: str = 'http://localhost:11434') -> bool:
 
 def make_llm(model: str = EXPLAINER_MODEL, temperature: float = 0.3) -> ChatOllama:
     """Construct a ChatOllama instance."""
-    return ChatOllama(model=model, temperature=temperature)
+    return ChatOllama(model=model, temperature=temperature, base_url=_OLLAMA_BASE_URL)
 
 
 def generate_explanation(

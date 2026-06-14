@@ -23,10 +23,12 @@ def _get_failure_type(row) -> str:
 
 def clean(df: pd.DataFrame) -> pd.DataFrame:
     """Drop UDI/Product ID, encode Type, rename columns, derive failure_type."""
-    out = df.drop(columns=['UDI', 'Product ID']).copy()
-    out['Type'] = out['Type'].map(TYPE_MAP)
-    out = out.rename(columns=RENAME_MAP)
-    out['failure_type'] = out.apply(_get_failure_type, axis=1)
+    out = df.drop(columns=[c for c in ['UDI', 'Product ID'] if c in df.columns]).copy()
+    if 'Type' in out.columns:
+        out['Type'] = out['Type'].map(TYPE_MAP)
+    out = out.rename(columns={k: v for k, v in RENAME_MAP.items() if k in out.columns})
+    if 'failure_type' not in out.columns:
+        out['failure_type'] = out.apply(_get_failure_type, axis=1)
     return out
 
 
