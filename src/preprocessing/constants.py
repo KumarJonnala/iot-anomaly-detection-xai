@@ -26,22 +26,11 @@ FAILURE_COLS = ['TWF', 'HDF', 'PWF', 'OSF', 'RNF']
 
 RULE_THRESHOLDS = {
     'hdf': {'max_temp_diff': 8.6, 'max_rot_speed': 1380},
-    'pwf': {'min_power_w': 3500, 'max_power_w': 9000},
-    'osf': {'L': 11000, 'M': 12000, 'H': 13000},
-    'twf': {'min_tool_wear': 200, 'max_tool_wear': 240},
+    'twf': {'min_tool_wear': 200},
+    'osf': {'min_wear_torque': 11000},
 }
 
-ZSCORE_THRESHOLD    = 3.0
-ROLLING_WINDOW      = 50
-IF_CONTAMINATION    = 0.034
-AE_PERCENTILE       = 95
-AE_LATENT_DIM       = 3
-FUSION_THRESHOLD    = 0.5
-ML_FUSION_THRESHOLD = 0.70
-FUSION_WEIGHTS      = (1/3, 1/3, 1/3)
-TWF_IF_THRESHOLD    = 0.50
-SENSOR_WINDOW       = 10
-WINDOW_SIZE         = 10
+WINDOW_SIZE = 10
 
 PALETTE = {
     'NORMAL': '#90CAF9',
