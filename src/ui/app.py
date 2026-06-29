@@ -17,13 +17,16 @@ import time
 import urllib.request
 import uuid
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import streamlit as st
 from langgraph.types import Command
 
 from src.agents.graph import build_graph
 from src.agents.store import set_resource
-from src.explainer.constants import EXPLAINER_MODEL
-from src.explainer.llm import stream_explanation
+from src.explainer.constants import EMBED_MODEL, EXPLAINER_MODEL, SENSOR_LABELS
+from src.explainer.llm import GROQ_MODELS, groq_available, stream_explanation
 from src.explainer.rag import build_kb
 from src.streaming.background import StreamingWorker
 
@@ -59,15 +62,15 @@ if 'stream_started' not in st.session_state:
 # ── Sidebar helpers ───────────────────────────────────────────────────────────
 
 @st.cache_data(ttl=60)
-def _available_models() -> list[str]:
-    """Fetch model names from Ollama API; fall back to known defaults."""
+def _ollama_models() -> list[str]:
+    """Fetch model names from local Ollama; fall back to defaults."""
     try:
         with urllib.request.urlopen('http://localhost:11434/api/tags', timeout=3) as r:
             data = json.loads(r.read())
         names = [m['name'] for m in data.get('models', [])]
         return [n for n in names if 'embed' not in n.lower()] or [EXPLAINER_MODEL]
     except Exception:
-        return [EXPLAINER_MODEL, 'llama3.2:latest', 'llama3.2:1b']
+        return [EXPLAINER_MODEL]
 
 
 @st.cache_data
@@ -90,8 +93,16 @@ with st.sidebar:
         index=_datasets.index(_default_ds) if _default_ds in _datasets else 0,
     )
 
-    _models = _available_models()
-    _default_llm = EXPLAINER_MODEL if EXPLAINER_MODEL in _models else _models[0]
+    _providers = ['Groq (cloud)', 'Ollama (local)'] if groq_available() else ['Ollama (local)']
+    provider = st.selectbox('LLM provider', _providers)
+
+    if provider == 'Groq (cloud)':
+        _models = GROQ_MODELS
+        _default_llm = 'llama-3.3-70b-versatile'
+    else:
+        _models = _ollama_models()
+        _default_llm = EXPLAINER_MODEL if EXPLAINER_MODEL in _models else _models[0]
+
     model_name = st.selectbox(
         'LLM model',
         _models,
@@ -152,6 +163,11 @@ _SPEED_OPTIONS = {
 def _start_streaming(path: str, llm_model: str, row_interval: float) -> None:
     with st.spinner('Loading dataset and initialising detectors…'):
         worker = StreamingWorker(Path(path), llm_model, row_interval)
+    try:
+        with st.spinner('Building knowledge base for RAG explanations…'):
+            worker._kb = build_kb(model=EMBED_MODEL)
+    except Exception:
+        worker._kb = None   # RAG unavailable; other explanation types still work
     worker.start()
     st.session_state.stream_worker     = worker
     st.session_state.stream_started    = True
@@ -399,7 +415,42 @@ def render_stream_tab() -> None:
                     h2.markdown(f"🔴 {rec['failure_type']}")
                     h3.markdown(f"Score: `{rec['combined_score']:.3f}`")
                     h4.markdown(f"Agreement: {agree}")
-                    st.markdown(result['explanation'])
+                    explanations = result.get('explanations', {})
+                    ez, ec, er = st.tabs(['Zero-Shot', 'Contextualised', 'RAG'])
+                    with ez:
+                        st.markdown(explanations.get('zero_shot', '—'))
+                    with ec:
+                        st.markdown(explanations.get('contextualised', '—'))
+                    with er:
+                        rdocs = result.get('rag_docs', [])
+                        if rdocs:
+                            st.caption(' · '.join(
+                                f"[{d['id']}] {d['title']} ({d['score']:.2f})" for d in rdocs
+                            ))
+                        st.markdown(explanations.get('rag', '—'))
+
+                    shap_vals = result.get('shap_values', {})
+                    ae_errors = rec.get('ae_error_per_sensor', {})
+                    if shap_vals or ae_errors:
+                        import pandas as pd
+                        chart_left, chart_right = st.columns(2)
+                        if shap_vals:
+                            with chart_left:
+                                st.caption('**IF SHAP — sensor contribution to anomaly score**')
+                                df_shap = pd.DataFrame({
+                                    'Sensor': [SENSOR_LABELS.get(k, k) for k in shap_vals],
+                                    'SHAP value': list(shap_vals.values()),
+                                }).set_index('Sensor').sort_values('SHAP value')
+                                st.bar_chart(df_shap)
+                        if ae_errors:
+                            with chart_right:
+                                total = sum(ae_errors.values()) or 1.0
+                                st.caption('**AE reconstruction error — % per sensor**')
+                                df_ae = pd.DataFrame({
+                                    'Sensor': [SENSOR_LABELS.get(k, k) for k in ae_errors],
+                                    '% error': [100 * v / total for v in ae_errors.values()],
+                                }).set_index('Sensor').sort_values('% error')
+                                st.bar_chart(df_ae)
 
         _anomaly_fragment()
 

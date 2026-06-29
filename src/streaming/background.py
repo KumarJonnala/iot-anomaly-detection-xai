@@ -4,9 +4,14 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import numpy as np
+
 from src.explainer.context import enrich_record
 from src.explainer.llm import generate_explanation
-from src.explainer.prompts import build_contextualised
+from src.explainer.prompts import build_zero_shot, build_contextualised, build_rag
+from src.explainer.rag import KnowledgeBase
+from src.explainer.shap_explain import SHAPExplainer
+from src.preprocessing.constants import SENSOR_COLS
 
 from .online_detector import OnlineDetector
 from .simulator import CSVStreamSimulator
@@ -22,11 +27,15 @@ class StreamingWorker:
     Completed explanations are placed in `results_queue` for the UI to consume.
     """
 
-    def __init__(self, path: Path, model_name: str, row_interval: float = 1.0) -> None:
+    def __init__(self, path: Path, model_name: str, row_interval: float = 1.0, kb: KnowledgeBase | None = None) -> None:
         self._sim      = CSVStreamSimulator(path)
         self._detector = OnlineDetector(self._sim.df, self._sim.ranges)
         self._model    = model_name
         self._interval = row_interval
+        self._kb       = kb
+
+        self._shap     = SHAPExplainer(self._detector._clf_if, self._sim.df)
+        self._sensor_cols = SENSOR_COLS
 
         self._stop     = threading.Event()
         self._pause    = threading.Event()   # set = paused, clear = running
@@ -42,7 +51,7 @@ class StreamingWorker:
         self.paused          = False
         self.total_rows      = self._sim.total_rows
 
-        # Thread-safe result channel: {'record', 'context', 'explanation'}
+        # Thread-safe result channel: {'record', 'context', 'explanations', 'prompts', 'rag_docs', 'shap_values'}
         self.results_queue: queue.Queue = queue.Queue()
 
         self._thread: threading.Thread | None = None
@@ -97,32 +106,45 @@ class StreamingWorker:
                     self.pending_count   += 1
 
             if record is not None:
-                self._executor.submit(self._explain, record)
+                row_vals = row[self._sensor_cols].values.astype('float32')
+                self._executor.submit(self._explain, record, row_vals)
 
             time.sleep(self._interval)
 
         with self._lock:
             self.done = True
 
-    def _explain(self, record: dict) -> None:
+    def _explain(self, record: dict, row_values: np.ndarray) -> None:
         row = record['row_idx']
         print(f'[worker] explaining row {row} with model={self._model}', flush=True)
         try:
-            context     = enrich_record(record, self._sim.df, self._sim.ranges)
-            prompt      = build_contextualised(record, context)
-            explanation = generate_explanation(prompt, model=self._model)
+            context  = enrich_record(record, self._sim.df, self._sim.ranges)
+            rag_docs = self._kb.retrieve_for_record(record, context) if self._kb else []
+            prompts  = {
+                'zero_shot':      build_zero_shot(record),
+                'contextualised': build_contextualised(record, context),
+                'rag':            build_rag(record, context, rag_docs),
+            }
+            explanations = {k: generate_explanation(v, model=self._model) for k, v in prompts.items()}
+            shap_values  = self._shap.explain(row_values)
             print(f'[worker] explanation done for row {row}', flush=True)
             self.results_queue.put({
-                'record':      record,
-                'context':     context,
-                'explanation': explanation,
+                'record':       record,
+                'context':      context,
+                'explanations': explanations,
+                'prompts':      prompts,
+                'rag_docs':     [{'id': d['id'], 'title': d['title'], 'score': d['score']} for d in rag_docs],
+                'shap_values':  shap_values,
             })
         except Exception as exc:
             print(f'[worker] explanation error for row {row}: {exc}', flush=True)
             self.results_queue.put({
-                'record':      record,
-                'context':     {},
-                'explanation': f'[Error: {exc}]',
+                'record':       record,
+                'context':      {},
+                'explanations': {k: f'[Error: {exc}]' for k in ('zero_shot', 'contextualised', 'rag')},
+                'prompts':      {},
+                'rag_docs':     [],
+                'shap_values':  {},
             })
         finally:
             with self._lock:

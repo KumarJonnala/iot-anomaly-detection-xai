@@ -9,3 +9,6 @@ ipython
 langchain-ollama>=0.2.0
 langgraph>=0.2.50
 streamlit>=1.40.0
+shap
+langchain-groq
+python-dotenv
