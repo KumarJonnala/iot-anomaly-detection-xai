@@ -58,7 +58,7 @@ SENSOR_WINDOW    = 10
 WINDOW_SIZE      = 10
 
 # Isolation Forest score threshold for TWF confirmation
-TWF_IF_THRESHOLD    = 0.50   # raised from 0.30 — stricter TWF confirmation
+TWF_IF_THRESHOLD    = 0.30   # set to 0.30 — looser TWF confirmation (better TWF recall, reasonable balance)
 PALETTE = {
     'NORMAL': '#90CAF9',
     'HDF':    '#EF5350',
