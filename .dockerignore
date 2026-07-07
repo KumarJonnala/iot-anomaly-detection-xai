@@ -1,0 +1,8 @@
+env/
+.git/
+test_notebooks/
+__pycache__/
+**/__pycache__/
+*.pyc
+.DS_Store
+.env

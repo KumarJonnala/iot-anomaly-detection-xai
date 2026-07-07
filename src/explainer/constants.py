@@ -18,8 +18,9 @@ SENSOR_UNITS: dict[str, str] = {
 
 PRE_WINDOW_SIZE: int = 50   # readings before anomaly for rolling stats
 
-EXPLAINER_MODEL: str = 'gemma3:4b'
-EMBED_MODEL:     str = 'nomic-embed-text:latest'
+import os
+EXPLAINER_MODEL: str = os.getenv('EXPLAINER_MODEL', 'gemma3:4b')
+EMBED_MODEL:     str = os.getenv('EMBED_MODEL', 'nomic-embed-text:latest')
 
 KB_ENTRIES: list[dict] = [
     {

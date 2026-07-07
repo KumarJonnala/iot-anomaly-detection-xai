@@ -1,15 +1,23 @@
+import os
+
 from langchain_ollama import OllamaEmbeddings
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_core.documents import Document
 
 from .constants import EMBED_MODEL, KB_ENTRIES, SENSOR_LABELS
 
+_OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
+
+
+_DEFAULT_EMBED_MODEL = 'nomic-embed-text:latest'
+
 
 class KnowledgeBase:
     """Vector store over KB_ENTRIES, embedded once at construction via OllamaEmbeddings."""
 
-    def __init__(self, model: str = EMBED_MODEL) -> None:
-        embedder     = OllamaEmbeddings(model=model)
+    def __init__(self, model: str = None) -> None:
+        model    = model or EMBED_MODEL or _DEFAULT_EMBED_MODEL
+        embedder = OllamaEmbeddings(model=model, base_url=_OLLAMA_BASE_URL)
         self._store  = InMemoryVectorStore(embedder)
         docs = [
             Document(
@@ -47,6 +55,6 @@ class KnowledgeBase:
         return self.retrieve(query, k=k)
 
 
-def build_kb(model: str = EMBED_MODEL) -> KnowledgeBase:
+def build_kb(model: str = None) -> KnowledgeBase:
     """Construct and return an embedded KnowledgeBase."""
     return KnowledgeBase(model=model)
