@@ -3,17 +3,29 @@ IoT Anomaly Detection XAI Dashboard
 Human-centred HITL system for IoT sensor anomaly review with natural language explanations.
 """
 
+import sys
+from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parents[2]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 import streamlit as st
 import pandas as pd
 import numpy as np
 import json
 import plotly.graph_objects as go
 import plotly.express as px
-from pathlib import Path
 from sklearn.ensemble import IsolationForest
 import warnings
 
 warnings.filterwarnings("ignore")
+
+from src.config import (
+    AE_LATENT_DIM, AE_PERCENTILE, FAILURE_COLS, FUSION_WEIGHTS,
+    IF_CONTAMINATION, ML_FUSION_THRESHOLD, PALETTE, RULE_THRESHOLDS,
+    SENSOR_COLS, SENSOR_LABELS, SENSOR_UNITS, TYPE_MAP, ZSCORE_THRESHOLD,
+)
 
 try:
     import torch
@@ -32,43 +44,14 @@ st.set_page_config(
 )
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-DATA_DIR = Path(__file__).parent.parent / "data"
+DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
-SENSOR_COLS   = ["air_temp_k", "process_temp_k", "rot_speed_rpm", "torque_nm", "tool_wear_min"]
-SENSOR_LABELS = {
-    "air_temp_k":     "Air Temperature",
-    "process_temp_k": "Process Temperature",
-    "rot_speed_rpm":  "Rotation Speed",
-    "torque_nm":      "Torque",
-    "tool_wear_min":  "Tool Wear",
-}
-SENSOR_UNITS = {
-    "air_temp_k":     "K",
-    "process_temp_k": "K",
-    "rot_speed_rpm":  "rpm",
-    "torque_nm":      "Nm",
-    "tool_wear_min":  "min",
-}
-FAILURE_TYPES = ["HDF", "PWF", "OSF", "TWF", "RNF"]
 FAILURE_NAMES = {
     "HDF": "Heat Dissipation",
     "PWF": "Power Failure",
     "OSF": "Overstrain",
     "TWF": "Tool Wear",
     "RNF": "Random Failure",
-}
-FAILURE_COLORS = {
-    "NORMAL": "#0EA5E9",
-    "HDF":    "#EF4444",
-    "PWF":    "#F59E0B",
-    "OSF":    "#10B981",
-    "TWF":    "#8B5CF6",
-    "RNF":    "#6B7280",
-}
-RULE_THRESHOLDS = {
-    "hdf": {"max_temp_diff": 8.6, "max_rot_speed": 1380},
-    "twf": {"min_tool_wear": 200},
-    "osf": {"min_wear_torque": 11000},
 }
 
 # ── SVG icon set (stroke-based, Heroicons-style) ──────────────────────────────
@@ -731,21 +714,6 @@ div[data-testid="metric-container"] {
   animation: fadeUp 0.63s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both;
 }
 
-/* Alert queue expanders — stagger first 10 */
-[data-testid="stExpander"] {
-  animation: fadeUp 0.50s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-[data-testid="stExpander"]:nth-child(1)  { animation-delay:  28ms; }
-[data-testid="stExpander"]:nth-child(2)  { animation-delay:  77ms; }
-[data-testid="stExpander"]:nth-child(3)  { animation-delay: 126ms; }
-[data-testid="stExpander"]:nth-child(4)  { animation-delay: 175ms; }
-[data-testid="stExpander"]:nth-child(5)  { animation-delay: 224ms; }
-[data-testid="stExpander"]:nth-child(6)  { animation-delay: 273ms; }
-[data-testid="stExpander"]:nth-child(7)  { animation-delay: 322ms; }
-[data-testid="stExpander"]:nth-child(8)  { animation-delay: 371ms; }
-[data-testid="stExpander"]:nth-child(9)  { animation-delay: 420ms; }
-[data-testid="stExpander"]:nth-child(10) { animation-delay: 469ms; }
-
 /* Info / warning boxes */
 [data-testid="stAlert"] {
   animation: fadeUp 0.59s cubic-bezier(0.16, 1, 0.3, 1) 0.14s both;
@@ -852,27 +820,14 @@ if TORCH_AVAILABLE:
 # ── Pipeline ──────────────────────────────────────────────────────────────────
 @st.cache_data(show_spinner=False)
 def run_pipeline(zscore_thresh, if_contamination, fusion_thresh, ae_percentile, use_ae):
-    df = pd.read_csv(DATA_DIR / "ai4i_clean.csv")
-    with open(DATA_DIR / "ai4i_ranges.json") as f:
+    df = pd.read_csv(DATA_DIR / "input" / "ai4i_clean.csv")
+    with open(DATA_DIR / "input" / "ai4i_ranges.json") as f:
         ranges = json.load(f)
 
     df_orig = df.copy()
     for col in SENSOR_COLS:
         r = ranges[col]
         df_orig[col] = df[col] * (r["max"] - r["min"]) + r["min"]
-
-    df_orig["temp_diff_k"] = df_orig["process_temp_k"] - df_orig["air_temp_k"]
-    df_orig["wear_torque"]  = df_orig["tool_wear_min"] * df_orig["torque_nm"]
-
-    t = RULE_THRESHOLDS
-    df["rule_hdf"] = (
-        (df_orig["temp_diff_k"] < t["hdf"]["max_temp_diff"]) &
-        (df_orig["rot_speed_rpm"] < t["hdf"]["max_rot_speed"])
-    )
-    df["rule_twf"] = df_orig["tool_wear_min"] >= t["twf"]["min_tool_wear"]
-    df["rule_osf"] = df_orig["wear_torque"] > t["osf"]["min_wear_torque"]
-    df["temp_diff_k"] = df_orig["temp_diff_k"]
-    df["wear_torque"]  = df_orig["wear_torque"]
 
     for col in SENSOR_COLS:
         g_mean, g_std = df[col].mean(), df[col].std()
@@ -902,7 +857,7 @@ def run_pipeline(zscore_thresh, if_contamination, fusion_thresh, ae_percentile, 
         X_t      = torch.FloatTensor(X_normal[n_val:])
         X_v      = torch.FloatTensor(X_normal[:n_val])
         loader   = DataLoader(TensorDataset(X_t), batch_size=256, shuffle=True)
-        model    = Autoencoder(5, 4)
+        model    = Autoencoder(len(SENSOR_COLS), AE_LATENT_DIM)
         opt      = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
         crit     = nn.MSELoss()
         best_val, no_improve, best_state = float("inf"), 0, None
@@ -937,15 +892,16 @@ def run_pipeline(zscore_thresh, if_contamination, fusion_thresh, ae_percentile, 
 
     zscore_norm = np.clip(df["zscore_max"] / 5.0, 0, 1)
     has_ae      = "ae_score" in df.columns
+    w           = FUSION_WEIGHTS
     combined    = (
-        0.30 * zscore_norm + 0.40 * df["if_score"] + 0.30 * df["ae_score"]
+        w[0] * zscore_norm + w[1] * df["if_score"] + w[2] * df["ae_score"]
         if has_ae else
-        0.43 * zscore_norm + 0.57 * df["if_score"]
+        0.5 * zscore_norm + 0.5 * df["if_score"]
     )
     df["zscore_norm"]    = zscore_norm
     df["combined_score"] = combined
 
-    rule_any     = df["rule_hdf"] | df["rule_twf"] | df["rule_osf"]
+    rule_any      = df["rule_hdf"] | df["rule_twf"] | df["rule_osf"] | df["rule_pwf"]
     df["anomaly"] = (combined > fusion_thresh) | rule_any
 
     flags   = [df["zscore_flag"].astype(int), df["if_flag"].astype(int)]
@@ -979,17 +935,28 @@ def generate_explanation(row: pd.Series, ranges: dict) -> str:
             f"machine cannot shed heat fast enough — thermal damage risk is elevated."
         )
     if row.get("rule_twf", False):
+        t = RULE_THRESHOLDS["twf"]
         parts.append(
-            "**Tool Wear Limit Reached** — The cutting tool has been in use for 200+ minutes. "
-            "This is the recommended replacement point. Continuing past this threshold "
-            "significantly raises the risk of sudden tool breakage and workpiece damage."
+            f"**Tool Wear Limit Reached** — The cutting tool is within the scheduled replacement "
+            f"window ({t['min_tool_wear']}–{t['max_tool_wear']} min). Continuing past this range "
+            f"significantly raises the risk of sudden tool breakage and workpiece damage."
         )
     if row.get("rule_osf", False):
         wt = row.get("wear_torque", float("nan"))
+        t  = RULE_THRESHOLDS["osf"]
         parts.append(
             f"**Mechanical Overload Risk** — The wear-torque product is **{wt:,.0f} min·Nm** "
-            f"(limit: 11,000). The tool is under excessive mechanical stress relative to its "
-            f"wear state — failure risk is high."
+            f"(limit: {t['L']:,}/{t['M']:,}/{t['H']:,} for L/M/H type). The tool is under "
+            f"excessive mechanical stress relative to its wear state — failure risk is high."
+        )
+    if row.get("rule_pwf", False):
+        pw = row.get("power_w", float("nan"))
+        t  = RULE_THRESHOLDS["pwf"]
+        parts.append(
+            f"**Power Failure Risk** — Spindle power is **{pw:,.0f} W**, "
+            f"outside the safe operating envelope "
+            f"({t['min_power_w']:,}–{t['max_power_w']:,} W). "
+            f"Check for motor overload or tool binding."
         )
 
     if not parts:
@@ -1052,7 +1019,7 @@ with st.sidebar:
     )
     page = st.selectbox(
         "Page",
-        ["Overview", "How It Works", "Alert Queue"],
+        ["Overview", "How It Works"],
         label_visibility="collapsed",
         key="ds_page",
     )
@@ -1065,22 +1032,22 @@ with st.sidebar:
 
     zscore_thresh = st.number_input(
         "Statistical threshold (σ)", min_value=2.0, max_value=5.0,
-        value=3.0, step=0.1, format="%.1f",
+        value=float(ZSCORE_THRESHOLD), step=0.1, format="%.1f",
         help="How many standard deviations away from the mean before flagging. 3σ is the scientific convention.",
     )
     if_contamination = st.number_input(
         "Expected fault rate", min_value=0.010, max_value=0.100,
-        value=0.034, step=0.001, format="%.3f",
+        value=float(IF_CONTAMINATION), step=0.001, format="%.3f",
         help="Approximate fraction of readings that are real faults. Set close to your machine's actual failure rate.",
     )
     fusion_thresh = st.number_input(
-        "Alert threshold", min_value=0.30, max_value=0.80,
-        value=0.50, step=0.05, format="%.2f",
+        "Alert threshold", min_value=0.30, max_value=0.90,
+        value=float(ML_FUSION_THRESHOLD), step=0.05, format="%.2f",
         help="Combined score needed to raise an alert. Higher = fewer, more confident alerts.",
     )
     ae_percentile = st.number_input(
         "Neural net sensitivity", min_value=90, max_value=99,
-        value=95, step=1,
+        value=int(AE_PERCENTILE), step=1,
         help="Percentile of reconstruction error above which the neural network raises a flag.",
     )
     use_ae = st.checkbox(
@@ -1144,7 +1111,7 @@ if page == "Overview":
     with col_bar:
         fig_bar = px.bar(
             ft_counts, x="Failure Type", y="Count",
-            color="Failure Type", color_discrete_map=FAILURE_COLORS,
+            color="Failure Type", color_discrete_map=PALETTE,
             text="Count",
         )
         fig_bar.update_traces(textposition="outside", textfont_color="#1E293B")
@@ -1166,7 +1133,7 @@ if page == "Overview":
             labels=[FAILURE_NAMES.get(k, k) for k in ft_fail.index],
             values=ft_fail.values,
             hole=0.52,
-            marker=dict(colors=[FAILURE_COLORS[k] for k in ft_fail.index],
+            marker=dict(colors=[PALETTE[k] for k in ft_fail.index],
                         line=dict(color="#FFFFFF", width=2)),
             textinfo="label+percent",
             textposition="outside",
@@ -1342,6 +1309,7 @@ elif page == "How It Works":
             if row.get("rule_hdf"): triggers.append("Heat dissipation rule")
             if row.get("rule_twf"): triggers.append("Tool wear rule")
             if row.get("rule_osf"): triggers.append("Overstrain rule")
+            if row.get("rule_pwf"): triggers.append("Power failure rule")
             if row.get("zscore_flag"): triggers.append("Z-Score")
             if row.get("if_flag"):    triggers.append("Isolation Forest")
             if row.get("ae_flag", False): triggers.append("Neural Network")
@@ -1353,105 +1321,3 @@ elif page == "How It Works":
                 "True Label":  "Failure" if row["machine_failure"] == 1 else "Normal",
             })
         st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True, height=420)
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# PAGE 3 — ALERT QUEUE
-# ══════════════════════════════════════════════════════════════════════════════
-elif page == "Alert Queue":
-    page_header(
-        "Alert Queue",
-        "All active alerts sorted by urgency. Expand an alert to see which sensors triggered it.",
-    )
-
-    n_total = len(anomaly_df)
-    n_high  = int((anomaly_df["combined_score"] >= 0.7).sum()) if n_total else 0
-    n_med   = int(((anomaly_df["combined_score"] >= 0.5) & (anomaly_df["combined_score"] < 0.7)).sum()) if n_total else 0
-    n_low   = n_total - n_high - n_med
-
-    c1, c2, c3, c4 = st.columns(4)
-    kpi(c1, "Total Alerts",   str(n_total), "currently active",           "accent")
-    kpi(c2, "High Priority",  str(n_high),  "score ≥ 0.70 — act quickly", "danger")
-    kpi(c3, "Medium Priority",str(n_med),   "score 0.50–0.69 — review",   "warning")
-    kpi(c4, "Low Priority",   str(n_low),   "score < 0.50 — monitor",     "success")
-
-    st.markdown("---")
-
-    if n_total == 0:
-        st.info("No active alerts. Lower the Alert Threshold in the sidebar to see more.")
-        st.stop()
-
-    sort_col = st.selectbox(
-        "Sort by",
-        ["combined_score", "zscore_max", "if_score"],
-        format_func=lambda c: {
-            "combined_score": "Severity (highest first)",
-            "zscore_max":     "Statistical deviation",
-            "if_score":       "Isolation Forest score",
-        }[c],
-    )
-    view_df = anomaly_df.sort_values(sort_col, ascending=False)
-    df_orig = denorm(df, ranges)
-    shown   = min(len(view_df), 60)
-    st.caption(f"Showing {shown} of {n_total} alerts")
-
-    for row_idx, row in view_df.head(60).iterrows():
-        sev      = severity(row["combined_score"])
-        sev_icon = {"HIGH": "●", "MEDIUM": "●", "LOW": "●"}[sev]
-        sev_col  = {"HIGH": "#EF4444", "MEDIUM": "#F59E0B", "LOW": "#10B981"}[sev]
-        rule_flags = [
-            name for flag, name in [
-                ("rule_hdf", "Heat Dissipation"), ("rule_twf", "Tool Wear"), ("rule_osf", "Overstrain"),
-            ] if row.get(flag)
-        ]
-        true_label = "Confirmed Failure" if row["machine_failure"] == 1 else "Normal in ground truth"
-        header = (
-            f'<span style="color:{sev_col}">{sev_icon}</span> '
-            f'Reading #{row_idx:,}  ·  {sev} severity  ·  Score {row["combined_score"]:.3f}  ·  {true_label}'
-        )
-
-        with st.expander(
-            f"Reading #{row_idx:,}  ·  {sev}  ·  {true_label}",
-            expanded=False,
-        ):
-            if rule_flags:
-                st.markdown(
-                    f'<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;'
-                    f'padding:10px 14px;font-size:.84rem;color:#991B1B;margin-bottom:12px">'
-                    f'Engineering rule triggered: <strong>{", ".join(rule_flags)}</strong>'
-                    f'</div>',
-                    unsafe_allow_html=True,
-                )
-
-            st.markdown(
-                '<div style="font-size:.74rem;font-weight:700;text-transform:uppercase;'
-                'letter-spacing:.07em;color:#334155;margin-bottom:8px">Sensor Readings</div>',
-                unsafe_allow_html=True,
-            )
-            rows_html = ""
-            shown_any = False
-            for c in SENSOR_COLS:
-                z_signed = float(row.get(f"{c}_zscore_global", 0))
-                z        = abs(z_signed)
-                val_o    = float(df_orig.loc[row_idx, c])
-                if z > 2.0:
-                    shown_any = True
-                    rows_html += sensor_row_html(SENSOR_LABELS[c], val_o, SENSOR_UNITS[c], z_signed, zscore_thresh)
-
-            if shown_any:
-                st.markdown(rows_html, unsafe_allow_html=True)
-            else:
-                st.markdown(
-                    '<div style="font-size:.83rem;color:#334155;padding:8px 0">'
-                    'All individual sensors are within range — this alert was raised by the '
-                    'combined model score detecting an unusual pattern across sensors.'
-                    '</div>',
-                    unsafe_allow_html=True,
-                )
-
-            st.markdown(
-                f'<div style="margin-top:10px;font-size:.80rem;color:#334155">'
-                f'Detector agreement: {row.get("agreement","—").replace("_"," ")}'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
