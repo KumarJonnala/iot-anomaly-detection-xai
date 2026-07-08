@@ -1,10 +1,6 @@
 env
-
-# Claude Code local config (contains personal machine paths)
-.claude/
-.mcp.json
-
-# Python cache files (auto-generated, not needed on GitHub)
+.env
 __pycache__/
 *.pyc
 *.pyo
+*.docx
