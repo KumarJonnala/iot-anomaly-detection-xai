@@ -1,4 +1,4 @@
-from .constants import EMBED_MODEL, EXPLAINER_MODEL, PRE_WINDOW_SIZE, SENSOR_LABELS, SENSOR_UNITS
+from src.config import EMBED_MODEL, EXPLAINER_MODEL, PRE_WINDOW_SIZE, SENSOR_LABELS, SENSOR_UNITS
 from .context import enrich_all, enrich_record
 from .export import (
     build_comparison_table,

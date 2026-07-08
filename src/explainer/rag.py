@@ -4,7 +4,8 @@ from langchain_ollama import OllamaEmbeddings
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_core.documents import Document
 
-from .constants import EMBED_MODEL, KB_ENTRIES, SENSOR_LABELS
+from .constants import KB_ENTRIES
+from src.config import EMBED_MODEL, SENSOR_LABELS
 
 _OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
 

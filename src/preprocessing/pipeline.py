@@ -4,9 +4,8 @@ import pandas as pd
 from pathlib import Path
 from sklearn.preprocessing import MinMaxScaler
 
-from .constants import (
-    FAILURE_COLS, RENAME_MAP, RULE_THRESHOLDS, SENSOR_COLS, TYPE_MAP,
-)
+from .constants import RENAME_MAP
+from src.config import FAILURE_COLS, RULE_THRESHOLDS, SENSOR_COLS, TYPE_MAP
 
 
 def load_raw(path: Path) -> pd.DataFrame:

@@ -1,7 +1,7 @@
 import numpy as np
 import shap
 
-from src.preprocessing.constants import SENSOR_COLS
+from src.config import SENSOR_COLS
 
 
 class SHAPExplainer:

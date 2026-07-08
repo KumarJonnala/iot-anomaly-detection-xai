@@ -1,7 +1,7 @@
 import pandas as pd
 
 try:
-    from .constants import EXPLAINER_MODEL, PRE_WINDOW_SIZE
+    from src.config import EXPLAINER_MODEL, PRE_WINDOW_SIZE
     from .context import enrich_record
     from .llm import generate_explanation
     from .prompts import build_contextualised, build_rag, build_zero_shot
@@ -11,7 +11,7 @@ except ImportError:
     import sys
     from pathlib import Path
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
-    from src.explainer.constants import EXPLAINER_MODEL, PRE_WINDOW_SIZE
+    from src.config import EXPLAINER_MODEL, PRE_WINDOW_SIZE
     from src.explainer.context import enrich_record
     from src.explainer.llm import generate_explanation
     from src.explainer.prompts import build_contextualised, build_rag, build_zero_shot

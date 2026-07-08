@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from .constants import PRE_WINDOW_SIZE, RULE_THRESHOLDS, SENSOR_COLS, SENSOR_LABELS, SENSOR_UNITS
+from src.config import PRE_WINDOW_SIZE, RULE_THRESHOLDS, SENSOR_COLS, SENSOR_LABELS, SENSOR_UNITS
 
 
 def denormalise(value: float, sensor: str, ranges: dict) -> float:

@@ -17,7 +17,7 @@ from src.detector import (
     train_autoencoder,
 )
 from src.detector.autoencoder import DEVICE
-from src.explainer.constants import SENSOR_COLS
+from src.config import SENSOR_COLS
 from src.explainer.context import enrich_record
 from src.explainer.export import save_results
 from src.explainer.llm import generate_explanation

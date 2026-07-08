@@ -2,7 +2,7 @@ import os
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from .constants import EXPLAINER_MODEL
+from src.config import EXPLAINER_MODEL
 
 _OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
 _GROQ_API_KEY    = os.getenv('GROQ_API_KEY')

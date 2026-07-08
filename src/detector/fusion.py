@@ -2,7 +2,7 @@ import json
 import numpy as np
 import pandas as pd
 
-from .constants import FUSION_THRESHOLD, FUSION_WEIGHTS, ML_FUSION_THRESHOLD, SENSOR_WINDOW
+from .constants import FUSION_WEIGHTS, ML_FUSION_THRESHOLD, SENSOR_WINDOW
 
 
 def fuse_scores(

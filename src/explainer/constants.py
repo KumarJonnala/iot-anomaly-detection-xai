@@ -1,27 +1,3 @@
-from src.preprocessing.constants import RULE_THRESHOLDS, SENSOR_COLS  # noqa: F401
-
-SENSOR_LABELS: dict[str, str] = {
-    'air_temp_k':      'Air Temperature',
-    'process_temp_k':  'Process Temperature',
-    'rot_speed_rpm':   'Rotational Speed',
-    'torque_nm':       'Torque',
-    'tool_wear_min':   'Tool Wear',
-}
-
-SENSOR_UNITS: dict[str, str] = {
-    'air_temp_k':      'K',
-    'process_temp_k':  'K',
-    'rot_speed_rpm':   'rpm',
-    'torque_nm':       'Nm',
-    'tool_wear_min':   'min',
-}
-
-PRE_WINDOW_SIZE: int = 50   # readings before anomaly for rolling stats
-
-import os
-EXPLAINER_MODEL: str = os.getenv('EXPLAINER_MODEL', 'gemma3:4b')
-EMBED_MODEL:     str = os.getenv('EMBED_MODEL', 'nomic-embed-text:latest')
-
 KB_ENTRIES: list[dict] = [
     {
         'id': 'hdf_mechanism',

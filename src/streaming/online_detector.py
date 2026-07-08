@@ -14,7 +14,7 @@ from src.detector.constants import (
     ZSCORE_THRESHOLD,
 )
 from src.detector.isolation_forest import fit_isolation_forest
-from src.explainer.constants import SENSOR_COLS
+from src.config import SENSOR_COLS
 
 _AE_PATH = Path('data/output/ae_ai4i.pt')
 

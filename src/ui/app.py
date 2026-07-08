@@ -25,7 +25,7 @@ from langgraph.types import Command
 
 from src.agents.graph import build_graph
 from src.agents.store import set_resource
-from src.explainer.constants import EMBED_MODEL, EXPLAINER_MODEL, SENSOR_LABELS
+from src.config import EMBED_MODEL, EXPLAINER_MODEL, SENSOR_LABELS
 from src.explainer.llm import GROQ_MODELS, groq_available, stream_explanation
 from src.explainer.rag import build_kb
 from src.streaming.background import StreamingWorker

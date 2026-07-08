@@ -11,7 +11,7 @@ from src.explainer.llm import generate_explanation
 from src.explainer.prompts import build_zero_shot, build_contextualised, build_rag
 from src.explainer.rag import KnowledgeBase
 from src.explainer.shap_explain import SHAPExplainer
-from src.preprocessing.constants import SENSOR_COLS
+from src.config import SENSOR_COLS
 
 from .online_detector import OnlineDetector
 from .simulator import CSVStreamSimulator
