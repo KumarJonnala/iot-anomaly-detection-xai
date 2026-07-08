@@ -7,7 +7,7 @@ import torch
 from src.detector.autoencoder import DEVICE, load_autoencoder
 from src.detector.constants import (
     AE_PERCENTILE,
-    FUSION_THRESHOLD,
+    ML_FUSION_THRESHOLD,
     FUSION_WEIGHTS,
     ROLLING_WINDOW,
     SENSOR_WINDOW,
@@ -107,8 +107,9 @@ class OnlineDetector:
         rule_hdf = bool(row.get('rule_hdf', False))
         rule_twf = bool(row.get('rule_twf', False))
         rule_osf = bool(row.get('rule_osf', False))
+        rule_pwf = bool(row.get('rule_pwf', False))
 
-        if not ((combined_score > FUSION_THRESHOLD) or rule_hdf or rule_twf or rule_osf):
+        if not ((combined_score > ML_FUSION_THRESHOLD) or rule_hdf or rule_twf or rule_osf or rule_pwf):
             return None
 
         n_agree   = int(zscore_flag) + int(if_flag) + int(ae_flag)
@@ -148,6 +149,7 @@ class OnlineDetector:
             'rule_hdf':      rule_hdf,
             'rule_twf':      rule_twf,
             'rule_osf':      rule_osf,
+            'rule_pwf':      rule_pwf,
 
             'combined_score': round(combined_score, 3),
             'agreement':      agreement,

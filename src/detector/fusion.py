@@ -2,13 +2,13 @@ import json
 import numpy as np
 import pandas as pd
 
-from .constants import FUSION_THRESHOLD, FUSION_WEIGHTS, SENSOR_WINDOW
+from .constants import FUSION_THRESHOLD, FUSION_WEIGHTS, ML_FUSION_THRESHOLD, SENSOR_WINDOW
 
 
 def fuse_scores(
     df: pd.DataFrame,
     weights: tuple = FUSION_WEIGHTS,
-    threshold: float = FUSION_THRESHOLD,
+    threshold: float = ML_FUSION_THRESHOLD,
 ) -> pd.DataFrame:
     """Combine Z-score, IF, and AE scores into a single combined_score.
 
@@ -25,7 +25,7 @@ def fuse_scores(
     df['zscore_norm']    = zscore_norm
     df['combined_score'] = combined
 
-    rule_any  = df['rule_hdf'] | df['rule_twf'] | df['rule_osf']
+    rule_any  = df['rule_hdf'] | df['rule_twf'] | df['rule_osf'] | df['rule_pwf']
     df['anomaly'] = (combined > threshold) | rule_any
 
     n_agree = (df['zscore_flag'].astype(int) +
@@ -86,6 +86,7 @@ def build_anomaly_records(
             'rule_hdf':            bool(row['rule_hdf']),
             'rule_twf':            bool(row['rule_twf']),
             'rule_osf':            bool(row['rule_osf']),
+            'rule_pwf':            bool(row['rule_pwf']),
 
             'combined_score':      round(float(row['combined_score']), 3),
             'agreement':           row['agreement'],
