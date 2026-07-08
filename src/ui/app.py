@@ -151,11 +151,9 @@ def _advance_graph(input_or_command) -> None:
 # ── Helpers — streaming ───────────────────────────────────────────────────────
 
 _SPEED_OPTIONS = {
-    '10 rows/sec (fast demo)': 0.1,
-    '2 rows/sec':              0.5,
-    '1 row/sec (default)':     1.0,
-    '1 row/2 sec':             2.0,
-    '1 row/5 sec (slow)':      5.0,
+    '5 rows/sec (fast)':   0.2,
+    '1 row/sec (default)': 1.0,
+    '1 row/5 sec (slow)':  5.0,
 }
 
 
