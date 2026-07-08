@@ -47,7 +47,7 @@ class KnowledgeBase:
         worst            = SENSOR_LABELS.get(record['worst_sensor'], record['worst_sensor'])
         failure          = record.get('failure_type', '')
         rules            = ' '.join(
-            name for name in ('HDF', 'TWF', 'OSF')
+            name for name in ('HDF', 'TWF', 'OSF', 'PWF')
             if record.get(f'rule_{name.lower()}')
         )
         ae_top           = context_payload.get('ae_attribution', [{}])

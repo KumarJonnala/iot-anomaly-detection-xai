@@ -40,11 +40,11 @@ KB_ENTRIES: list[dict] = [
         'failure_type': 'TWF',
         'title': 'Tool Wear Failure — Threshold and Inspection',
         'text': (
-            'The TWF rule fires when tool_wear_min >= 200. This threshold represents the recommended '
-            'tool replacement interval. When this flag triggers, operators should inspect the tool '
-            'immediately. Torque readings above normal for a given speed are a secondary indicator '
-            'of advanced wear. Replacing the tool before 200 minutes is advisable if torque '
-            'deviates more than 15% from the baseline for that rotational speed.'
+            'The TWF rule fires when tool_wear_min is in the range [200, 240] minutes. The lower '
+            'bound marks the recommended replacement interval; the upper bound caps the rule to '
+            'avoid flagging extreme wear values that are artefacts rather than imminent failures. '
+            'When this flag triggers, operators should inspect the tool immediately. Torque readings '
+            'above normal for a given speed are a secondary indicator of advanced wear.'
         ),
     },
     {
@@ -64,11 +64,12 @@ KB_ENTRIES: list[dict] = [
         'failure_type': 'OSF',
         'title': 'Overstrain Failure — Threshold and Mitigation',
         'text': (
-            'The OSF rule fires when tool_wear_min × torque_nm > 11,000. This compound threshold '
-            'captures the interaction between tool age and cutting force. Mitigation options include '
-            'reducing feed rate (lowering torque demand), replacing the tool (resetting wear to 0), '
-            'or reducing material hardness. OSF often co-occurs with TWF when the tool is both old '
-            'and working under high load.'
+            'The OSF rule fires when tool_wear_min × torque_nm exceeds a type-aware threshold: '
+            '11,000 Nm·min for type-L machines, 12,000 for type-M, and 13,000 for type-H. '
+            'Heavier-duty machine types tolerate higher cumulative stress before overstrain risk. '
+            'Mitigation options include reducing feed rate (lowering torque demand), replacing '
+            'the tool (resetting wear to 0), or reducing material hardness. OSF often co-occurs '
+            'with TWF when the tool is both old and working under high load.'
         ),
     },
     {
@@ -88,11 +89,12 @@ KB_ENTRIES: list[dict] = [
         'failure_type': 'PWF',
         'title': 'Power Failure — Operating Context',
         'text': (
-            'PWF is a statistical anomaly detected by the ensemble (Z-score, Isolation Forest, '
-            'Autoencoder) rather than a fixed rule. It is associated with combinations of high '
-            'torque and high rotational speed that exceed the normal operating distribution. '
-            'Operators should check spindle load meters, verify the cutting programme parameters, '
-            'and inspect for tool binding or workpiece clamping issues when PWF is flagged.'
+            'PWF is detected by a deterministic rule: rule_pwf fires when spindle power is below '
+            '3,500 W or above 9,000 W. Power below 3,500 W during machining suggests tool '
+            'disengagement or drive belt slip; power above 9,000 W indicates motor overload from '
+            'heavy cutting or tool binding. Operators should check spindle load meters, verify '
+            'cutting programme parameters, and inspect for tool binding or workpiece clamping '
+            'issues when PWF is flagged.'
         ),
     },
     {
@@ -125,12 +127,13 @@ KB_ENTRIES: list[dict] = [
         'failure_type': None,
         'title': 'Anomaly Interpretation — General Guidance',
         'text': (
-            'A combined_score above 0.5 indicates the ensemble of detectors (Z-score, Isolation '
-            'Forest, Autoencoder) agrees that this reading is anomalous. Higher agreement among '
-            'all three detectors increases confidence in the flag. Rule-triggered anomalies '
-            '(rule_hdf, rule_twf, rule_osf) have near-zero false positive rates and should be '
-            'treated as actionable immediately. Statistical-only flags (agreement=none or one_only) '
-            'carry higher uncertainty and may warrant monitoring rather than immediate action.'
+            'Anomaly detection uses two independent paths. The ML path flags a row when the '
+            'combined score (equal-weighted average of Z-score, Isolation Forest, and Autoencoder) '
+            'exceeds 0.70. The rule path flags independently when any domain rule fires '
+            '(rule_hdf, rule_twf, rule_osf, or rule_pwf); these have near-zero false positive '
+            'rates and should be treated as actionable immediately. Statistical-only flags '
+            '(agreement=none or one_only) carry higher uncertainty and warrant monitoring rather '
+            'than immediate action.'
         ),
     },
     {
