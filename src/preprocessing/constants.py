@@ -1,5 +1,3 @@
-from pathlib import Path
-
 SENSOR_COLS = ['air_temp_k', 'process_temp_k', 'rot_speed_rpm', 'torque_nm', 'tool_wear_min']
 
 ORIG_NAMES = [
@@ -31,17 +29,8 @@ RULE_THRESHOLDS = {
     'twf': {'min_tool_wear': 200, 'max_tool_wear': 240},
 }
 
-ZSCORE_THRESHOLD    = 3.0
-ROLLING_WINDOW      = 50
-IF_CONTAMINATION    = 0.034
-AE_PERCENTILE       = 95
-AE_LATENT_DIM       = 3
-FUSION_THRESHOLD    = 0.5
-ML_FUSION_THRESHOLD = 0.70
-FUSION_WEIGHTS      = (1/3, 1/3, 1/3)
-TWF_IF_THRESHOLD    = 0.30
-SENSOR_WINDOW       = 10
-WINDOW_SIZE         = 10
+SENSOR_WINDOW = 10
+WINDOW_SIZE   = 10
 
 PALETTE = {
     'NORMAL': '#90CAF9',

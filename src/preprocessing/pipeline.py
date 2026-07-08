@@ -45,8 +45,12 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     t = RULE_THRESHOLDS
     out['rule_hdf'] = (out['temp_diff_k'] < t['hdf']['max_temp_diff']) & \
                       (out['rot_speed_rpm'] < t['hdf']['max_rot_speed'])
-    out['rule_twf'] = out['tool_wear_min'] >= t['twf']['min_tool_wear']
-    out['rule_osf'] = out['wear_torque'] > t['osf']['min_wear_torque']
+    out['rule_twf'] = (out['tool_wear_min'] >= t['twf']['min_tool_wear']) & \
+                      (out['tool_wear_min'] <= t['twf']['max_tool_wear'])
+    osf_by_type     = {v: t['osf'][k] for k, v in TYPE_MAP.items()}
+    out['rule_osf'] = out['wear_torque'] > out['type'].map(osf_by_type)
+    out['rule_pwf'] = (out['power_w'] < t['pwf']['min_power_w']) | \
+                      (out['power_w'] > t['pwf']['max_power_w'])
     return out
 
 
