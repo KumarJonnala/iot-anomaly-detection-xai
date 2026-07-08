@@ -16,7 +16,7 @@ from src.detector.constants import (
 from src.detector.isolation_forest import fit_isolation_forest
 from src.config import SENSOR_COLS
 
-_AE_PATH = Path('data/output/ae_ai4i.pt')
+_AE_PATH = Path(__file__).parent.parent.parent / 'data' / 'output' / 'ae_ai4i.pt'
 
 
 class OnlineDetector:
@@ -55,6 +55,10 @@ class OnlineDetector:
         # Global stats for Z-score baseline
         self._g_mean = {c: float(df[c].mean()) for c in SENSOR_COLS}
         self._g_std  = {c: float(df[c].std())  for c in SENSOR_COLS}
+
+    @property
+    def clf_if(self):
+        return self._clf_if
 
     def score_row(self, row_idx: int, row) -> dict | None:
         """Score one incoming row. Returns an anomaly record dict or None."""

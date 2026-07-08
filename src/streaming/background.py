@@ -34,7 +34,7 @@ class StreamingWorker:
         self._interval = row_interval
         self._kb       = kb
 
-        self._shap     = SHAPExplainer(self._detector._clf_if, self._sim.df)
+        self._shap     = SHAPExplainer(self._detector.clf_if, self._sim.df)
         self._sensor_cols = SENSOR_COLS
 
         self._stop     = threading.Event()

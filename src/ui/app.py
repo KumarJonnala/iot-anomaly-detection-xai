@@ -73,7 +73,7 @@ def _ollama_models() -> list[str]:
         return [EXPLAINER_MODEL]
 
 
-@st.cache_data
+@st.cache_data(ttl=300)
 def _available_datasets(data_dir: str = 'data') -> list[str]:
     """List CSV files under data/input/ and data/output/."""
     csvs = sorted(Path(data_dir).glob('**/*.csv'))
@@ -191,7 +191,7 @@ def render_batch_tab() -> None:
 
         if st.button('Start Pipeline', type='primary'):
             with st.spinner('Building knowledge base...'):
-                kb = build_kb(model='nomic-embed-text:latest')
+                kb = build_kb(model=EMBED_MODEL)
             set_resource(st.session_state.thread_id, 'kb', kb)
             st.session_state.started = True
             _advance_graph({
