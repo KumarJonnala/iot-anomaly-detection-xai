@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
 
-from .constants import FAILURE_COLS, ORIG_NAMES, PALETTE
+from .constants import ORIG_NAMES
+from src.config import FAILURE_COLS, PALETTE
 
 
 def _derive_failure_type(df):

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from .constants import PRE_WINDOW_SIZE, RULE_THRESHOLDS, SENSOR_COLS, SENSOR_LABELS, SENSOR_UNITS
+from src.config import PRE_WINDOW_SIZE, RULE_THRESHOLDS, SENSOR_COLS, SENSOR_LABELS, SENSOR_UNITS
 
 
 def denormalise(value: float, sensor: str, ranges: dict) -> float:
@@ -89,16 +89,26 @@ def build_rule_explanation(record: dict, df_row: pd.Series, ranges: dict) -> str
         wear_min = round(denormalise(float(df_row['tool_wear_min']), 'tool_wear_min', ranges), 0)
         triggered.append(
             f'Tool Wear Failure rule fired: tool wear is {int(wear_min)} min, '
-            f'meeting or exceeding the {t["twf"]["min_tool_wear"]}-minute replacement threshold. '
+            f'within the scheduled replacement window ({t["twf"]["min_tool_wear"]}–{t["twf"]["max_tool_wear"]} min). '
             f'Immediate tool inspection is recommended.'
         )
 
     if record.get('rule_osf'):
-        wear_torque = round(float(df_row['wear_torque']), 1)
+        wear_torque  = round(float(df_row['wear_torque']), 1)
+        type_label   = {0: 'L', 1: 'M', 2: 'H'}.get(int(df_row['type']), 'L')
+        osf_threshold = t['osf'][type_label]
         triggered.append(
             f'Overstrain Failure rule fired: wear-torque product is {wear_torque} Nm·min '
-            f'(threshold > {t["osf"]["min_wear_torque"]} Nm·min). '
+            f'(threshold > {osf_threshold} Nm·min for type-{type_label} machine). '
             f'Spindle overload risk — consider reducing feed rate or replacing the tool.'
+        )
+
+    if record.get('rule_pwf'):
+        power_w = round(float(df_row['power_w']), 1)
+        triggered.append(
+            f'Power Failure rule fired: spindle power is {power_w} W, '
+            f'outside the safe operating envelope ({t["pwf"]["min_power_w"]}–{t["pwf"]["max_power_w"]} W). '
+            f'Check for motor overload or tool binding.'
         )
 
     if not triggered:
@@ -117,7 +127,7 @@ def _detector_summary(record: dict) -> str:
         votes.append(f'Autoencoder (error={record["ae_error_total"]:.5f})')
 
     rule_votes = [k.replace('rule_', '').upper()
-                  for k in ('rule_hdf', 'rule_twf', 'rule_osf')
+                  for k in ('rule_hdf', 'rule_twf', 'rule_osf', 'rule_pwf')
                   if record.get(k)]
 
     parts = []

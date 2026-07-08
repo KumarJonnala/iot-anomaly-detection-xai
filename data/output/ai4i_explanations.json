@@ -1,0 +1,422 @@
+[
+  {
+    "row_idx": 50,
+    "failure_type": "PWF",
+    "agreement": "two_of_three",
+    "combined_score": 0.71,
+    "context_payload": {
+      "sensor_context": {
+        "air_temp_k": {
+          "current_norm": 0.3913,
+          "current_orig": 298.9,
+          "unit": "K",
+          "global_percentile": 35.7,
+          "pre_median_norm": 0.3804,
+          "pre_std_norm": 0.0326,
+          "pre_min_norm": 0.3043,
+          "pre_max_norm": 0.413,
+          "global_p5_norm": 0.1957,
+          "global_p50_norm": 0.5217,
+          "global_p95_norm": 0.8913
+        },
+        "process_temp_k": {
+          "current_norm": 0.4198,
+          "current_orig": 309.1,
+          "unit": "K",
+          "global_percentile": 31.4,
+          "pre_median_norm": 0.4321,
+          "pre_std_norm": 0.033,
+          "pre_min_norm": 0.3457,
+          "pre_max_norm": 0.4691,
+          "global_p5_norm": 0.2469,
+          "global_p50_norm": 0.5432,
+          "global_p95_norm": 0.8395
+        },
+        "rot_speed_rpm": {
+          "current_norm": 0.9854,
+          "current_orig": 2861.0,
+          "unit": "rpm",
+          "global_percentile": 100.0,
+          "pre_median_norm": 0.1711,
+          "pre_std_norm": 0.098,
+          "pre_min_norm": 0.0803,
+          "pre_max_norm": 0.5047,
+          "global_p5_norm": 0.0955,
+          "global_p50_norm": 0.195,
+          "global_p95_norm": 0.4075
+        },
+        "torque_nm": {
+          "current_norm": 0.011,
+          "current_orig": 4.6,
+          "unit": "Nm",
+          "global_percentile": 0.0,
+          "pre_median_norm": 0.535,
+          "pre_std_norm": 0.1286,
+          "pre_min_norm": 0.217,
+          "pre_max_norm": 0.6964,
+          "global_p5_norm": 0.2706,
+          "global_p50_norm": 0.4986,
+          "global_p95_norm": 0.7184
+        },
+        "tool_wear_min": {
+          "current_norm": 0.5652,
+          "current_orig": 143.0,
+          "unit": "min",
+          "global_percentile": 66.3,
+          "pre_median_norm": 0.2826,
+          "pre_std_norm": 0.1639,
+          "pre_min_norm": 0.0,
+          "pre_max_norm": 0.5534,
+          "global_p5_norm": 0.0393,
+          "global_p50_norm": 0.4269,
+          "global_p95_norm": 0.8144
+        }
+      },
+      "ae_attribution": [
+        {
+          "sensor": "tool_wear_min",
+          "label": "Tool Wear",
+          "error": 0.615878,
+          "pct": 46.0
+        },
+        {
+          "sensor": "rot_speed_rpm",
+          "label": "Rotational Speed",
+          "error": 0.318929,
+          "pct": 23.8
+        },
+        {
+          "sensor": "process_temp_k",
+          "label": "Process Temperature",
+          "error": 0.186828,
+          "pct": 14.0
+        },
+        {
+          "sensor": "torque_nm",
+          "label": "Torque",
+          "error": 0.161472,
+          "pct": 12.1
+        },
+        {
+          "sensor": "air_temp_k",
+          "label": "Air Temperature",
+          "error": 0.055142,
+          "pct": 4.1
+        }
+      ],
+      "rule_explanation": "No domain rules triggered.",
+      "detector_summary": "Statistical detectors: Z-score (max=7.38\u03c3), Isolation Forest (score=0.721). Detector agreement: two of three statistical detectors. Combined score: 0.710.",
+      "anomaly_metadata": {
+        "row_idx": 50,
+        "worst_sensor": "rot_speed_rpm",
+        "zscore_max": 7.375,
+        "combined_score": 0.71,
+        "agreement": "two_of_three",
+        "failure_type": "PWF",
+        "true_label": 1
+      }
+    },
+    "prompts": {
+      "zero_shot": "You are an IoT maintenance analyst.\n\n=== ANOMALY ALERT ===\nWorst sensor   : Rotational Speed\nFlagged value  : 0.9854 (normalised)\nMax Z-score    : 7.375\nDetector agree : two_of_three\n\nIn 2-3 sentences, explain what this anomaly likely means, which sensors are most involved, and what an operator should investigate next.",
+      "contextualised": "You are an IoT maintenance analyst.\n\n=== ANOMALY ALERT ===\nRow index      : 50\nWorst sensor   : Rotational Speed\n\n--- Current sensor readings (normalised [0,1] + original units) ---\n  Air Temperature: 298.9 K (norm 0.3913, 35th pct globally); prior-50-reading median=0.3804, std=0.0326\n  Process Temperature: 309.1 K (norm 0.4198, 31th pct globally); prior-50-reading median=0.4321, std=0.0330\n  Rotational Speed: 2861.0 rpm (norm 0.9854, 100th pct globally); prior-50-reading median=0.1711, std=0.0980\n  Torque: 4.6 Nm (norm 0.0110, 0th pct globally); prior-50-reading median=0.5350, std=0.1286\n  Tool Wear: 143.0 min (norm 0.5652, 66th pct globally); prior-50-reading median=0.2826, std=0.1639\n\n--- Autoencoder reconstruction error (top 3 by contribution) ---\n  1. Tool Wear: error=0.615878 (46.0% of total)\n  2. Rotational Speed: error=0.318929 (23.8% of total)\n  3. Process Temperature: error=0.186828 (14.0% of total)\n\n--- Domain rule status ---\nNo domain rules triggered.\n\n--- Detector summary ---\nStatistical detectors: Z-score (max=7.38\u03c3), Isolation Forest (score=0.721). Detector agreement: two of three statistical detectors. Combined score: 0.710.\n\nIn 2-3 sentences, explain what this anomaly likely means, which sensors are most involved, and what an operator should investigate next.",
+      "rag": "You are an IoT maintenance analyst.\n\n=== ANOMALY ALERT ===\nRow index      : 50\nWorst sensor   : Rotational Speed\n\n--- Current sensor readings (normalised [0,1] + original units) ---\n  Air Temperature: 298.9 K (norm 0.3913, 35th pct globally); prior-50-reading median=0.3804, std=0.0326\n  Process Temperature: 309.1 K (norm 0.4198, 31th pct globally); prior-50-reading median=0.4321, std=0.0330\n  Rotational Speed: 2861.0 rpm (norm 0.9854, 100th pct globally); prior-50-reading median=0.1711, std=0.0980\n  Torque: 4.6 Nm (norm 0.0110, 0th pct globally); prior-50-reading median=0.5350, std=0.1286\n  Tool Wear: 143.0 min (norm 0.5652, 66th pct globally); prior-50-reading median=0.2826, std=0.1639\n\n--- Autoencoder reconstruction error (top 3 by contribution) ---\n  1. Tool Wear: error=0.615878 (46.0% of total)\n  2. Rotational Speed: error=0.318929 (23.8% of total)\n  3. Process Temperature: error=0.186828 (14.0% of total)\n\n--- Domain rule status ---\nNo domain rules triggered.\n\n--- Detector summary ---\nStatistical detectors: Z-score (max=7.38\u03c3), Isolation Forest (score=0.721). Detector agreement: two of three statistical detectors. Combined score: 0.710.\n=== DOMAIN KNOWLEDGE ===\n[pwf_context] Power Failure \u2014 Operating Context\nPWF is a statistical anomaly detected by the ensemble (Z-score, Isolation Forest, Autoencoder) rather than a fixed rule. It is associated with combinations of high torque and high rotational speed that exceed the normal operating distribution. Operators should check spindle load meters, verify the cutting programme parameters, and inspect for tool binding or workpiece clamping issues when PWF is flagged.\n\n[twf_thresholds] Tool Wear Failure \u2014 Threshold and Inspection\nThe TWF rule fires when tool_wear_min >= 200. This threshold represents the recommended tool replacement interval. When this flag triggers, operators should inspect the tool immediately. Torque readings above normal for a given speed are a secondary indicator of advanced wear. Replacing the tool before 200 minutes is advisable if torque deviates more than 15% from the baseline for that rotational speed.\n\n\nIn 2-3 sentences, explain what this anomaly likely means, which sensors are most involved, and what an operator should investigate next."
+    },
+    "explanations": {
+      "zero_shot": "=== ANOMALY ALERT ===\n**Worst sensor:** Rotational Speed\n**Flagged value:** 0.9854 (normalised)\n**Max Z-score:** 7.375\n**Detector agree:** two_of_three\n\nThis anomaly indicates a significant deviation from the expected rotational speed \u2013 currently at 98.54% of the normal operating value. The high Z-score (7.375) signifies a very unusual reading, likely caused by a sudden drop in speed.  The two detectors agreeing on this anomaly suggests it's a robust observation.  **Operator Action:** Immediately check the motor\u2019s power supply, encoder signal, and any associated mechanical connections for loose connections or obstructions. Verify the motor\u2019s current draw to rule out a stall condition.",
+      "contextualised": "Anomaly Alert \u2013 Row 50\n\nThis anomaly indicates a significant deviation in rotational speed, currently at 2861 rpm \u2013 exceeding the 98th percentile globally. The autoencoder reconstruction error highlights tool wear and rotational speed as the primary drivers of this anomaly, with tool wear contributing the most to the reconstruction error.  The operator should immediately investigate the tool wear rate, focusing on potential issues with the cutting tool itself, and monitor rotational speed closely for any further deviations.",
+      "rag": "Anomaly Alert: Row 50 indicates a significant deviation in rotational speed, flagged by a combined anomaly detection system (PWF). The primary sensor involved is Rotational Speed (2861.0 rpm), with secondary involvement from Tool Wear (143.0 min) due to the autoencoder reconstruction error. Operators should immediately investigate potential tool binding, workpiece clamping issues, and verify cutting program parameters, alongside closely monitoring torque readings for this rotational speed."
+    },
+    "rag_docs_retrieved": [
+      {
+        "id": "pwf_context",
+        "title": "Power Failure \u2014 Operating Context",
+        "score": 0.7605622410774231
+      },
+      {
+        "id": "twf_thresholds",
+        "title": "Tool Wear Failure \u2014 Threshold and Inspection",
+        "score": 0.7200889587402344
+      }
+    ]
+  },
+  {
+    "row_idx": 69,
+    "failure_type": "PWF",
+    "agreement": "none",
+    "combined_score": 0.32,
+    "context_payload": {
+      "sensor_context": {
+        "air_temp_k": {
+          "current_norm": 0.3913,
+          "current_orig": 298.9,
+          "unit": "K",
+          "global_percentile": 35.7,
+          "pre_median_norm": 0.3804,
+          "pre_std_norm": 0.0115,
+          "pre_min_norm": 0.3696,
+          "pre_max_norm": 0.413,
+          "global_p5_norm": 0.1957,
+          "global_p50_norm": 0.5217,
+          "global_p95_norm": 0.8913
+        },
+        "process_temp_k": {
+          "current_norm": 0.4074,
+          "current_orig": 309.0,
+          "unit": "K",
+          "global_percentile": 29.2,
+          "pre_median_norm": 0.4198,
+          "pre_std_norm": 0.0201,
+          "pre_min_norm": 0.3951,
+          "pre_max_norm": 0.4691,
+          "global_p5_norm": 0.2469,
+          "global_p50_norm": 0.5432,
+          "global_p95_norm": 0.8395
+        },
+        "rot_speed_rpm": {
+          "current_norm": 0.1409,
+          "current_orig": 1410.0,
+          "unit": "rpm",
+          "global_percentile": 21.3,
+          "pre_median_norm": 0.1959,
+          "pre_std_norm": 0.1387,
+          "pre_min_norm": 0.0995,
+          "pre_max_norm": 0.9854,
+          "global_p5_norm": 0.0955,
+          "global_p50_norm": 0.195,
+          "global_p95_norm": 0.4075
+        },
+        "torque_nm": {
+          "current_norm": 0.8503,
+          "current_orig": 65.7,
+          "unit": "Nm",
+          "global_percentile": 99.5,
+          "pre_median_norm": 0.5041,
+          "pre_std_norm": 0.1438,
+          "pre_min_norm": 0.011,
+          "pre_max_norm": 0.7019,
+          "global_p5_norm": 0.2706,
+          "global_p50_norm": 0.4986,
+          "global_p95_norm": 0.7184
+        },
+        "tool_wear_min": {
+          "current_norm": 0.7549,
+          "current_orig": 191.0,
+          "unit": "min",
+          "global_percentile": 88.2,
+          "pre_median_norm": 0.4842,
+          "pre_std_norm": 0.1546,
+          "pre_min_norm": 0.2174,
+          "pre_max_norm": 0.747,
+          "global_p5_norm": 0.0393,
+          "global_p50_norm": 0.4269,
+          "global_p95_norm": 0.8144
+        }
+      },
+      "ae_attribution": [
+        {
+          "sensor": "tool_wear_min",
+          "label": "Tool Wear",
+          "error": 0.03368,
+          "pct": 52.5
+        },
+        {
+          "sensor": "air_temp_k",
+          "label": "Air Temperature",
+          "error": 0.02523,
+          "pct": 39.3
+        },
+        {
+          "sensor": "process_temp_k",
+          "label": "Process Temperature",
+          "error": 0.003749,
+          "pct": 5.8
+        },
+        {
+          "sensor": "torque_nm",
+          "label": "Torque",
+          "error": 0.001418,
+          "pct": 2.2
+        },
+        {
+          "sensor": "rot_speed_rpm",
+          "label": "Rotational Speed",
+          "error": 9.3e-05,
+          "pct": 0.1
+        }
+      ],
+      "rule_explanation": "Overstrain Failure rule fired: wear-torque product is 12548.7 Nm\u00b7min (threshold > 11000 Nm\u00b7min). Spindle overload risk \u2014 consider reducing feed rate or replacing the tool.",
+      "detector_summary": "Domain rules: OSF. Detector agreement: rule-only (no statistical detectors agree). Combined score: 0.320.",
+      "anomaly_metadata": {
+        "row_idx": 69,
+        "worst_sensor": "torque_nm",
+        "zscore_max": 2.579,
+        "combined_score": 0.32,
+        "agreement": "none",
+        "failure_type": "PWF",
+        "true_label": 1
+      }
+    },
+    "prompts": {
+      "zero_shot": "You are an IoT maintenance analyst.\n\n=== ANOMALY ALERT ===\nWorst sensor   : Torque\nFlagged value  : 0.8503 (normalised)\nMax Z-score    : 2.579\nDetector agree : none\n\nIn 2-3 sentences, explain what this anomaly likely means, which sensors are most involved, and what an operator should investigate next.",
+      "contextualised": "You are an IoT maintenance analyst.\n\n=== ANOMALY ALERT ===\nRow index      : 69\nWorst sensor   : Torque\n\n--- Current sensor readings (normalised [0,1] + original units) ---\n  Air Temperature: 298.9 K (norm 0.3913, 35th pct globally); prior-50-reading median=0.3804, std=0.0115\n  Process Temperature: 309.0 K (norm 0.4074, 29th pct globally); prior-50-reading median=0.4198, std=0.0201\n  Rotational Speed: 1410.0 rpm (norm 0.1409, 21th pct globally); prior-50-reading median=0.1959, std=0.1387\n  Torque: 65.7 Nm (norm 0.8503, 99th pct globally); prior-50-reading median=0.5041, std=0.1438\n  Tool Wear: 191.0 min (norm 0.7549, 88th pct globally); prior-50-reading median=0.4842, std=0.1546\n\n--- Autoencoder reconstruction error (top 3 by contribution) ---\n  1. Tool Wear: error=0.033680 (52.5% of total)\n  2. Air Temperature: error=0.025230 (39.3% of total)\n  3. Process Temperature: error=0.003749 (5.8% of total)\n\n--- Domain rule status ---\nOverstrain Failure rule fired: wear-torque product is 12548.7 Nm\u00b7min (threshold > 11000 Nm\u00b7min). Spindle overload risk \u2014 consider reducing feed rate or replacing the tool.\n\n--- Detector summary ---\nDomain rules: OSF. Detector agreement: rule-only (no statistical detectors agree). Combined score: 0.320.\n\nIn 2-3 sentences, explain what this anomaly likely means, which sensors are most involved, and what an operator should investigate next.",
+      "rag": "You are an IoT maintenance analyst.\n\n=== ANOMALY ALERT ===\nRow index      : 69\nWorst sensor   : Torque\n\n--- Current sensor readings (normalised [0,1] + original units) ---\n  Air Temperature: 298.9 K (norm 0.3913, 35th pct globally); prior-50-reading median=0.3804, std=0.0115\n  Process Temperature: 309.0 K (norm 0.4074, 29th pct globally); prior-50-reading median=0.4198, std=0.0201\n  Rotational Speed: 1410.0 rpm (norm 0.1409, 21th pct globally); prior-50-reading median=0.1959, std=0.1387\n  Torque: 65.7 Nm (norm 0.8503, 99th pct globally); prior-50-reading median=0.5041, std=0.1438\n  Tool Wear: 191.0 min (norm 0.7549, 88th pct globally); prior-50-reading median=0.4842, std=0.1546\n\n--- Autoencoder reconstruction error (top 3 by contribution) ---\n  1. Tool Wear: error=0.033680 (52.5% of total)\n  2. Air Temperature: error=0.025230 (39.3% of total)\n  3. Process Temperature: error=0.003749 (5.8% of total)\n\n--- Domain rule status ---\nOverstrain Failure rule fired: wear-torque product is 12548.7 Nm\u00b7min (threshold > 11000 Nm\u00b7min). Spindle overload risk \u2014 consider reducing feed rate or replacing the tool.\n\n--- Detector summary ---\nDomain rules: OSF. Detector agreement: rule-only (no statistical detectors agree). Combined score: 0.320.\n=== DOMAIN KNOWLEDGE ===\n[osf_thresholds] Overstrain Failure \u2014 Threshold and Mitigation\nThe OSF rule fires when tool_wear_min \u00d7 torque_nm > 11,000. This compound threshold captures the interaction between tool age and cutting force. Mitigation options include reducing feed rate (lowering torque demand), replacing the tool (resetting wear to 0), or reducing material hardness. OSF often co-occurs with TWF when the tool is both old and working under high load.\n\n[osf_mechanism] Overstrain Failure \u2014 Mechanism\nOverstrain Failure (OSF) occurs when the cumulative mechanical stress on the tool and spindle exceeds structural limits. It is quantified as the product of tool wear and torque (wear_torque = tool_wear_min \u00d7 torque_nm). As the tool wears, it requires greater torque to remove material, amplifying mechanical stress. Beyond 11,000 Nm\u00b7min, the risk of spindle overload or tool breakage rises sharply.\n\n\nIn 2-3 sentences, explain what this anomaly likely means, which sensors are most involved, and what an operator should investigate next."
+    },
+    "explanations": {
+      "zero_shot": "=== ANOMALY ALERT ===\n**Worst sensor:** Torque\n**Flagged value:** 0.8503 (normalised)\n**Max Z-score:** 2.579\n**Detector agree:** none\n\nThis anomaly indicates a significant deviation from the expected torque reading. The torque sensor is reporting a value that is 2.579 standard deviations above the historical average, suggesting a potential issue with the motor or driven equipment.  Immediately check the motor current draw and inspect the driven equipment for unusual resistance or binding \u2013 focus on any components directly connected to this torque sensor.",
+      "contextualised": "Anomaly Alert: Row 69 indicates a significant torque issue, triggering an overstrain failure. The primary driver of this anomaly is excessive torque \u2013 12548.7 Nm\u00b7min \u2013 likely due to high tool wear, as indicated by the autoencoder reconstruction error.  The operator should immediately investigate the tool\u2019s wear state and consider reducing the feed rate or replacing the tool to mitigate the spindle overload risk.",
+      "rag": "This anomaly indicates a significant risk of spindle overload due to excessive cutting force. The Torque sensor, combined with the high Tool Wear reading, has triggered the Overstrain Failure rule, suggesting the tool is significantly worn and generating excessive torque. The operator should immediately investigate the tool\u2019s condition, considering a potential replacement and reducing the feed rate to mitigate the risk of spindle damage."
+    },
+    "rag_docs_retrieved": [
+      {
+        "id": "osf_thresholds",
+        "title": "Overstrain Failure \u2014 Threshold and Mitigation",
+        "score": 0.7753121852874756
+      },
+      {
+        "id": "osf_mechanism",
+        "title": "Overstrain Failure \u2014 Mechanism",
+        "score": 0.7702549695968628
+      }
+    ]
+  },
+  {
+    "row_idx": 73,
+    "failure_type": "NORMAL",
+    "agreement": "none",
+    "combined_score": 0.228,
+    "context_payload": {
+      "sensor_context": {
+        "air_temp_k": {
+          "current_norm": 0.4022,
+          "current_orig": 299.0,
+          "unit": "K",
+          "global_percentile": 37.4,
+          "pre_median_norm": 0.3804,
+          "pre_std_norm": 0.0115,
+          "pre_min_norm": 0.3696,
+          "pre_max_norm": 0.413,
+          "global_p5_norm": 0.1957,
+          "global_p50_norm": 0.5217,
+          "global_p95_norm": 0.8913
+        },
+        "process_temp_k": {
+          "current_norm": 0.4198,
+          "current_orig": 309.1,
+          "unit": "K",
+          "global_percentile": 31.4,
+          "pre_median_norm": 0.4198,
+          "pre_std_norm": 0.0199,
+          "pre_min_norm": 0.3951,
+          "pre_max_norm": 0.4691,
+          "global_p5_norm": 0.2469,
+          "global_p50_norm": 0.5432,
+          "global_p95_norm": 0.8395
+        },
+        "rot_speed_rpm": {
+          "current_norm": 0.2468,
+          "current_orig": 1592.0,
+          "unit": "rpm",
+          "global_percentile": 71.5,
+          "pre_median_norm": 0.1892,
+          "pre_std_norm": 0.1423,
+          "pre_min_norm": 0.0995,
+          "pre_max_norm": 0.9854,
+          "global_p5_norm": 0.0955,
+          "global_p50_norm": 0.195,
+          "global_p95_norm": 0.4075
+        },
+        "torque_nm": {
+          "current_norm": 0.4286,
+          "current_orig": 35.0,
+          "unit": "Nm",
+          "global_percentile": 30.8,
+          "pre_median_norm": 0.5185,
+          "pre_std_norm": 0.1548,
+          "pre_min_norm": 0.011,
+          "pre_max_norm": 0.8503,
+          "global_p5_norm": 0.2706,
+          "global_p50_norm": 0.4986,
+          "global_p95_norm": 0.7184
+        },
+        "tool_wear_min": {
+          "current_norm": 0.7905,
+          "current_orig": 200.0,
+          "unit": "min",
+          "global_percentile": 92.4,
+          "pre_median_norm": 0.5296,
+          "pre_std_norm": 0.1538,
+          "pre_min_norm": 0.2688,
+          "pre_max_norm": 0.7826,
+          "global_p5_norm": 0.0393,
+          "global_p50_norm": 0.4269,
+          "global_p95_norm": 0.8144
+        }
+      },
+      "ae_attribution": [
+        {
+          "sensor": "tool_wear_min",
+          "label": "Tool Wear",
+          "error": 0.428421,
+          "pct": 49.8
+        },
+        {
+          "sensor": "process_temp_k",
+          "label": "Process Temperature",
+          "error": 0.26685,
+          "pct": 31.0
+        },
+        {
+          "sensor": "air_temp_k",
+          "label": "Air Temperature",
+          "error": 0.099015,
+          "pct": 11.5
+        },
+        {
+          "sensor": "rot_speed_rpm",
+          "label": "Rotational Speed",
+          "error": 0.040474,
+          "pct": 4.7
+        },
+        {
+          "sensor": "torque_nm",
+          "label": "Torque",
+          "error": 0.026379,
+          "pct": 3.1
+        }
+      ],
+      "rule_explanation": "Tool Wear Failure rule fired: tool wear is 200 min, meeting or exceeding the 200-minute replacement threshold. Immediate tool inspection is recommended.",
+      "detector_summary": "Domain rules: TWF. Detector agreement: rule-only (no statistical detectors agree). Combined score: 0.228.",
+      "anomaly_metadata": {
+        "row_idx": 73,
+        "worst_sensor": "tool_wear_min",
+        "zscore_max": 1.628,
+        "combined_score": 0.228,
+        "agreement": "none",
+        "failure_type": "NORMAL",
+        "true_label": 0
+      }
+    },
+    "prompts": {
+      "zero_shot": "You are an IoT maintenance analyst.\n\n=== ANOMALY ALERT ===\nWorst sensor   : Tool Wear\nFlagged value  : 0.7905 (normalised)\nMax Z-score    : 1.628\nDetector agree : none\n\nIn 2-3 sentences, explain what this anomaly likely means, which sensors are most involved, and what an operator should investigate next.",
+      "contextualised": "You are an IoT maintenance analyst.\n\n=== ANOMALY ALERT ===\nRow index      : 73\nWorst sensor   : Tool Wear\n\n--- Current sensor readings (normalised [0,1] + original units) ---\n  Air Temperature: 299.0 K (norm 0.4022, 37th pct globally); prior-50-reading median=0.3804, std=0.0115\n  Process Temperature: 309.1 K (norm 0.4198, 31th pct globally); prior-50-reading median=0.4198, std=0.0199\n  Rotational Speed: 1592.0 rpm (norm 0.2468, 71th pct globally); prior-50-reading median=0.1892, std=0.1423\n  Torque: 35.0 Nm (norm 0.4286, 30th pct globally); prior-50-reading median=0.5185, std=0.1548\n  Tool Wear: 200.0 min (norm 0.7905, 92th pct globally); prior-50-reading median=0.5296, std=0.1538\n\n--- Autoencoder reconstruction error (top 3 by contribution) ---\n  1. Tool Wear: error=0.428421 (49.8% of total)\n  2. Process Temperature: error=0.266850 (31.0% of total)\n  3. Air Temperature: error=0.099015 (11.5% of total)\n\n--- Domain rule status ---\nTool Wear Failure rule fired: tool wear is 200 min, meeting or exceeding the 200-minute replacement threshold. Immediate tool inspection is recommended.\n\n--- Detector summary ---\nDomain rules: TWF. Detector agreement: rule-only (no statistical detectors agree). Combined score: 0.228.\n\nIn 2-3 sentences, explain what this anomaly likely means, which sensors are most involved, and what an operator should investigate next.",
+      "rag": "You are an IoT maintenance analyst.\n\n=== ANOMALY ALERT ===\nRow index      : 73\nWorst sensor   : Tool Wear\n\n--- Current sensor readings (normalised [0,1] + original units) ---\n  Air Temperature: 299.0 K (norm 0.4022, 37th pct globally); prior-50-reading median=0.3804, std=0.0115\n  Process Temperature: 309.1 K (norm 0.4198, 31th pct globally); prior-50-reading median=0.4198, std=0.0199\n  Rotational Speed: 1592.0 rpm (norm 0.2468, 71th pct globally); prior-50-reading median=0.1892, std=0.1423\n  Torque: 35.0 Nm (norm 0.4286, 30th pct globally); prior-50-reading median=0.5185, std=0.1548\n  Tool Wear: 200.0 min (norm 0.7905, 92th pct globally); prior-50-reading median=0.5296, std=0.1538\n\n--- Autoencoder reconstruction error (top 3 by contribution) ---\n  1. Tool Wear: error=0.428421 (49.8% of total)\n  2. Process Temperature: error=0.266850 (31.0% of total)\n  3. Air Temperature: error=0.099015 (11.5% of total)\n\n--- Domain rule status ---\nTool Wear Failure rule fired: tool wear is 200 min, meeting or exceeding the 200-minute replacement threshold. Immediate tool inspection is recommended.\n\n--- Detector summary ---\nDomain rules: TWF. Detector agreement: rule-only (no statistical detectors agree). Combined score: 0.228.\n=== DOMAIN KNOWLEDGE ===\n[twf_mechanism] Tool Wear Failure \u2014 Mechanism\nTool Wear Failure (TWF) occurs when the cutting tool has degraded beyond its designed service life. Tool wear accumulates linearly with operation time. Once wear exceeds 200 minutes of cutting time, the tool edge is too blunt to cut accurately, causing increased vibration, surface finish defects, and elevated torque demand. Continued operation past this threshold risks catastrophic tool fracture.\n\n[twf_thresholds] Tool Wear Failure \u2014 Threshold and Inspection\nThe TWF rule fires when tool_wear_min >= 200. This threshold represents the recommended tool replacement interval. When this flag triggers, operators should inspect the tool immediately. Torque readings above normal for a given speed are a secondary indicator of advanced wear. Replacing the tool before 200 minutes is advisable if torque deviates more than 15% from the baseline for that rotational speed.\n\n\nIn 2-3 sentences, explain what this anomaly likely means, which sensors are most involved, and what an operator should investigate next."
+    },
+    "explanations": {
+      "zero_shot": "=== ANOMALY ALERT ===\n**Worst sensor:** Tool Wear\n**Flagged value:** 0.7905 (normalised)\n**Max Z-score:** 1.628\n**Detector agree:** none\n\nThis anomaly indicates a significant deviation from the tool wear baseline. The sensor reporting this value (likely a force or displacement sensor on the tool) has exceeded a threshold of 1.628 standard deviations above the normal operating range.  The operator should immediately inspect the tool for signs of excessive wear, unusual friction, or damage \u2013 paying particular attention to the contact points.",
+      "contextualised": "This anomaly indicates a significant issue with tool wear, as the Tool Wear sensor reading of 200 minutes exceeds the pre-defined replacement threshold. The autoencoder reconstruction error highlights Tool Wear and Process Temperature as the primary contributors to this deviation.  The operator should immediately schedule a visual inspection of the tool, focusing on signs of excessive wear, and investigate if the Process Temperature is contributing to accelerated tool degradation.",
+      "rag": "This anomaly indicates a critical tool wear issue, as the tool\u2019s measured wear of 200 minutes has exceeded the pre-defined replacement threshold. The primary sensor driving this alert is Tool Wear, but Process Temperature and Air Temperature are also contributing factors based on the autoencoder reconstruction error.  The operator should immediately inspect the tool for physical damage and assess the cutting performance, paying close attention to torque readings at the current rotational speed to confirm the severity of the wear."
+    },
+    "rag_docs_retrieved": [
+      {
+        "id": "twf_mechanism",
+        "title": "Tool Wear Failure \u2014 Mechanism",
+        "score": 0.7764056324958801
+      },
+      {
+        "id": "twf_thresholds",
+        "title": "Tool Wear Failure \u2014 Threshold and Inspection",
+        "score": 0.7734359502792358
+      }
+    ]
+  }
+]

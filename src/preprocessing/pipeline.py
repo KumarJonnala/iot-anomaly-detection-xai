@@ -4,9 +4,8 @@ import pandas as pd
 from pathlib import Path
 from sklearn.preprocessing import MinMaxScaler
 
-from .constants import (
-    FAILURE_COLS, RENAME_MAP, RULE_THRESHOLDS, SENSOR_COLS, TYPE_MAP,
-)
+from .constants import RENAME_MAP
+from src.config import FAILURE_COLS, RULE_THRESHOLDS, SENSOR_COLS, TYPE_MAP
 
 
 def load_raw(path: Path) -> pd.DataFrame:
@@ -23,10 +22,12 @@ def _get_failure_type(row) -> str:
 
 def clean(df: pd.DataFrame) -> pd.DataFrame:
     """Drop UDI/Product ID, encode Type, rename columns, derive failure_type."""
-    out = df.drop(columns=['UDI', 'Product ID']).copy()
-    out['Type'] = out['Type'].map(TYPE_MAP)
-    out = out.rename(columns=RENAME_MAP)
-    out['failure_type'] = out.apply(_get_failure_type, axis=1)
+    out = df.drop(columns=[c for c in ['UDI', 'Product ID'] if c in df.columns]).copy()
+    if 'Type' in out.columns:
+        out['Type'] = out['Type'].map(TYPE_MAP)
+    out = out.rename(columns={k: v for k, v in RENAME_MAP.items() if k in out.columns})
+    if 'failure_type' not in out.columns:
+        out['failure_type'] = out.apply(_get_failure_type, axis=1)
     return out
 
 
@@ -43,8 +44,12 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     t = RULE_THRESHOLDS
     out['rule_hdf'] = (out['temp_diff_k'] < t['hdf']['max_temp_diff']) & \
                       (out['rot_speed_rpm'] < t['hdf']['max_rot_speed'])
-    out['rule_twf'] = out['tool_wear_min'] >= t['twf']['min_tool_wear']
-    out['rule_osf'] = out['wear_torque'] > t['osf']['min_wear_torque']
+    out['rule_twf'] = (out['tool_wear_min'] >= t['twf']['min_tool_wear']) & \
+                      (out['tool_wear_min'] <= t['twf']['max_tool_wear'])
+    osf_by_type     = {v: t['osf'][k] for k, v in TYPE_MAP.items()}
+    out['rule_osf'] = out['wear_torque'] > out['type'].map(osf_by_type)
+    out['rule_pwf'] = (out['power_w'] < t['pwf']['min_power_w']) | \
+                      (out['power_w'] > t['pwf']['max_power_w'])
     return out
 
 

@@ -1,7 +1,3 @@
-from pathlib import Path
-
-SENSOR_COLS = ['air_temp_k', 'process_temp_k', 'rot_speed_rpm', 'torque_nm', 'tool_wear_min']
-
 ORIG_NAMES = [
     'Air temperature [K]',
     'Process temperature [K]',
@@ -18,25 +14,4 @@ RENAME_MAP = {
     'Torque [Nm]':             'torque_nm',
     'Tool wear [min]':         'tool_wear_min',
     'Machine failure':         'machine_failure',
-}
-
-TYPE_MAP = {'L': 0, 'M': 1, 'H': 2}
-
-FAILURE_COLS = ['TWF', 'HDF', 'PWF', 'OSF', 'RNF']
-
-RULE_THRESHOLDS = {
-    'hdf': {'max_temp_diff': 8.6, 'max_rot_speed': 1380},
-    'twf': {'min_tool_wear': 200},
-    'osf': {'min_wear_torque': 11000},
-}
-
-WINDOW_SIZE = 10
-
-PALETTE = {
-    'NORMAL': '#90CAF9',
-    'HDF':    '#EF5350',
-    'PWF':    '#FFA726',
-    'OSF':    '#66BB6A',
-    'TWF':    '#AB47BC',
-    'RNF':    '#78909C',
 }

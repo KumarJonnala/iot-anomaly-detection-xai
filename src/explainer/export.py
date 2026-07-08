@@ -4,7 +4,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from .constants import SENSOR_LABELS
+from src.config import SENSOR_LABELS
 
 
 def save_results(results: list[dict], data_dir: Path) -> Path:

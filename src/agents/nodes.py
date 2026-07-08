@@ -5,7 +5,6 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.types import interrupt
 
 from src.detector import (
-    Autoencoder,
     build_anomaly_records,
     compute_zscores,
     fit_isolation_forest,
@@ -17,7 +16,7 @@ from src.detector import (
     train_autoencoder,
 )
 from src.detector.autoencoder import DEVICE
-from src.explainer.constants import SENSOR_COLS
+from src.config import SENSOR_COLS
 from src.explainer.context import enrich_record
 from src.explainer.export import save_results
 from src.explainer.llm import generate_explanation
@@ -27,7 +26,7 @@ from src.preprocessing.pipeline import clean, engineer_features, load_raw, norma
 from .state import PipelineState
 from .store import get_resource, set_resource
 
-_AE_PATH = Path('data/ae_ai4i.pt')
+_AE_PATH = Path(__file__).parent.parent.parent / 'data' / 'output' / 'ae_ai4i.pt'
 
 
 def _thread(config: RunnableConfig) -> str:
@@ -112,7 +111,7 @@ def enrich_node(state: PipelineState, config: RunnableConfig) -> dict:
 def retrieve_docs_node(state: PipelineState, config: RunnableConfig) -> dict:
     kb   = get_resource(_thread(config), 'kb')
     docs = kb.retrieve_for_record(
-        state['current_record'], state['context_payload'], k=2)
+        state['current_record'], state['context_payload'], k=2) if kb else []
     return {'retrieved_docs': docs}
 
 
@@ -221,6 +220,6 @@ def monitor_only_node(state: PipelineState, config: RunnableConfig) -> dict:
 # ── Export ────────────────────────────────────────────────────────────────────
 
 def export_node(state: PipelineState) -> dict:
-    out = save_results(state['completed_results'], Path('data'))
+    out = save_results(state['completed_results'], Path('data/output'))
     print(f'Exported {len(state["completed_results"])} records → {out}')
     return {}

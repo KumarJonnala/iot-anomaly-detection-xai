@@ -1,0 +1,56 @@
+services:
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  # One-shot init container: pulls required models then exits.
+  # Models are cached in ollama_models volume — subsequent runs skip the pull.
+  ollama-init:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - EXPLAINER_MODEL=${EXPLAINER_MODEL:-gemma3:4b}
+      - EMBED_MODEL=${EMBED_MODEL:-nomic-embed-text:latest}
+    entrypoint: >
+      sh -c "
+        ollama pull $${EXPLAINER_MODEL} &&
+        ollama pull $${EMBED_MODEL} &&
+        echo 'Models ready.'
+      "
+    restart: "no"
+
+  streamlit:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - EXPLAINER_MODEL=${EXPLAINER_MODEL:-gemma3:4b}
+      - EMBED_MODEL=${EMBED_MODEL:-nomic-embed-text:latest}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - GROQ_MODELS=${GROQ_MODELS:-llama-3.3-70b-versatile,llama-3.1-8b-instant,gemma2-9b-it,mixtral-8x7b-32768}
+    depends_on:
+      ollama:
+        condition: service_healthy
+      ollama-init:
+        condition: service_completed_successfully
+    volumes:
+      # Live-mount data/ so exported results (ai4i_explanations.json) persist on host
+      - ./data:/app/data
+
+volumes:
+  # Named volume keeps pulled models across docker compose down/up cycles
+  ollama_models:

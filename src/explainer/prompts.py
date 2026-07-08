@@ -1,4 +1,4 @@
-from .constants import SENSOR_COLS, SENSOR_LABELS, SENSOR_UNITS
+from src.config import SENSOR_COLS, SENSOR_LABELS, SENSOR_UNITS
 
 _CLOSING = (
     'In 2-3 sentences, explain what this anomaly likely means, '
