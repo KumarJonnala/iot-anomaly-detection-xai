@@ -75,9 +75,9 @@ def _ollama_models() -> list[str]:
 
 @st.cache_data
 def _available_datasets(data_dir: str = 'data') -> list[str]:
-    """List CSV files in the data directory."""
-    csvs = sorted(Path(data_dir).glob('*.csv'))
-    return [str(p) for p in csvs] or ['data/ai4i2020.csv']
+    """List CSV files under data/input/ and data/output/."""
+    csvs = sorted(Path(data_dir).glob('**/*.csv'))
+    return [str(p) for p in csvs] or ['data/input/ai4i2020.csv']
 
 
 # ── Shared sidebar ────────────────────────────────────────────────────────────
@@ -86,7 +86,7 @@ with st.sidebar:
     st.markdown('---')
 
     _datasets = _available_datasets()
-    _default_ds = 'data/ai4i_clean.csv'
+    _default_ds = 'data/input/ai4i_clean.csv'
     data_path = st.selectbox(
         'Dataset',
         _datasets,

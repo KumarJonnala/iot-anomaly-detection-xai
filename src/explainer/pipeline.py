@@ -86,13 +86,14 @@ if __name__ == '__main__':
     # Optional: python3 src/explainer/pipeline.py 5   (runs on first N records)
     n_records = int(sys.argv[1]) if len(sys.argv) > 1 else 3
 
-    data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
+    input_dir  = Path(__file__).resolve().parent.parent.parent / 'data' / 'input'
+    output_dir = Path(__file__).resolve().parent.parent.parent / 'data' / 'output'
 
-    print(f'Loading data from {data_dir}...')
-    df_main = pd.read_csv(data_dir / 'ai4i_clean.csv')
-    with open(data_dir / 'ai4i_ranges.json') as f:
+    print(f'Loading data from {input_dir} / {output_dir}...')
+    df_main = pd.read_csv(input_dir / 'ai4i_clean.csv')
+    with open(input_dir / 'ai4i_ranges.json') as f:
         ranges_main = json.load(f)
-    with open(data_dir / 'ai4i_anomaly_records.json') as f:
+    with open(output_dir / 'ai4i_anomaly_records.json') as f:
         records_main = json.load(f)
 
     print(f'Building knowledge base...')

@@ -1,18 +1,24 @@
 # iot-anomaly-detection-xai
 
-Human-Centred IoT Sensor Anomaly Detection with XAI and Natural Language Explanations.
+Human-Centred IoT Sensor Anomaly Detection with Explainable AI and Natural Language Explanations.
+
 ---
 
 ## Overview
 
-This project builds a human-in-the-loop (HITL) system for IoT sensor anomaly detection. When an anomaly is flagged, a local LLM generates a plain-language explanation grounded in temporal and domain context. A Streamlit dashboard lets operators confirm, reject, or snooze alerts — closing the feedback loop.
+This project builds a human-in-the-loop (HITL) system for IoT sensor anomaly detection using the AI4I 2020 Predictive Maintenance dataset. When an anomaly is flagged by a multi-detector ensemble, a local or cloud LLM generates a plain-language explanation grounded in temporal and domain context. A Streamlit dashboard lets operators confirm, reject, or snooze alerts — closing the feedback loop.
+
+**Two operating modes:**
+- **Batch mode** — LangGraph pipeline processes all anomaly records, generates three explanation types in parallel, and presents them for operator review one by one
+- **Stream mode** — CSV replay simulates a live sensor feed; each anomaly is explained asynchronously in a background thread while the stream continues
+
 ---
 
 ## Research Questions
 
-**RQ1 (primary):** Does providing LLM-generated natural language explanations in an IoT anomaly detection system increase user trust and improve anomaly assessment compared to a system without explanations?
+**RQ1 (primary):** Does providing LLM-generated natural language explanations increase user trust and improve anomaly assessment compared to a system without explanations?
 
-**RQ2:** How do different prompting strategies (zero-shot, contextualised, RAG) affect the quality of generated explanations, measured via LLM-as-Judge?
+**RQ2:** How do different prompting strategies (zero-shot, contextualised, RAG) affect explanation quality, measured via LLM-as-Judge?
 
 **RQ3:** How do users perceive the usability and trustworthiness of the HCAI system compared to a baseline?
 
@@ -20,44 +26,211 @@ This project builds a human-in-the-loop (HITL) system for IoT sensor anomaly det
 
 ## System Architecture
 
-1. Data ingestion/preprocessing
-2. Anomaly Detection
-3. Context Assembly (Local and Global context)
-4. LLM Explainer 
-5. Streamlit UI
+```
+Raw CSV
+  └─ Preprocessing (normalise, feature engineering, rule flags)
+       └─ Multi-Detector Ensemble
+            ├─ Z-score (global + rolling-50, threshold 3.0σ)
+            ├─ Isolation Forest (200 trees, contamination 0.034)
+            └─ Autoencoder (5→10→4→10→5, p95 MSE threshold)
+                 └─ Score Fusion (0.3×Z + 0.4×IF + 0.3×AE, threshold 0.5)
+                      └─ Context Assembly (temporal window, rolling stats, domain rules)
+                           └─ LLM Explainer
+                                ├─ Zero-Shot
+                                ├─ Contextualised
+                                └─ RAG (InMemoryVectorStore, 12 KB entries)
+                                     └─ SHAP (TreeExplainer on IsolationForest)
+                                          └─ Streamlit Dashboard (Batch + Stream tabs)
+```
 
 ---
 
 ## Dataset
 
-AI4I 2020 Predictive Maintenance | 10,000 | Air temp, process temp, speed, torque, tool wear | 5 failure modes (HDF, PWF, OSF, TWF, RNF) | 
-Source: AI4I 2020 Predictive Maintenance Dataset [Dataset]. (2020). UCI Machine Learning Repository. https://doi.org/10.24432/C5HS5C.
+**AI4I 2020 Predictive Maintenance Dataset** — UCI Machine Learning Repository  
+10,000 synthetic sensor readings with 5 failure modes.
+
+| Sensor | Description |
+|---|---|
+| Air temperature [K] | Ambient air temperature |
+| Process temperature [K] | Machine process temperature |
+| Rotational speed [rpm] | Spindle rotational speed |
+| Torque [Nm] | Applied torque |
+| Tool wear [min] | Cumulative tool wear |
+
+**Failure modes:** HDF (Heat Dissipation), TWF (Tool Wear), OSF (Overstrain), PWF (Power), RNF (Random)
+
+Source: AI4I 2020 Predictive Maintenance Dataset [Dataset]. (2020). UCI Machine Learning Repository. https://doi.org/10.24432/C5HS5C
 
 ---
 
-## Anomaly detection
+## Anomaly Detection
 
-WIP
+Three detectors run in parallel; their scores are fused by weighted average:
+
+| Detector | Method | Score weight |
+|---|---|---|
+| Z-score | Max of per-sensor global Z and rolling-50 Z | 0.30 |
+| Isolation Forest | Normalised anomaly score (200 trees, contam=0.034) | 0.40 |
+| Autoencoder | Per-row MSE; threshold at p95 of normal-row MSE | 0.30 |
+
+Combined score ≥ 0.5 → anomaly. Three domain rules (HDF, TWF, OSF) add a `rule_flags` column but do not affect the numeric threshold.
 
 ---
 
 ## Anomaly Context Payload
 
-Temporal context (+-10 readings), rolling 24h statistics (median, std), and global percentile bands (p5–p95) replace feature attribution scores, making explanations interpretable without ML expertise.
+Each anomaly record carries:
+- **Temporal window** — ±10 readings around the anomaly row
+- **Rolling statistics** — median and std over the preceding 50 rows per sensor
+- **Global percentile bands** — p5/p25/p75/p95 over the full dataset
+- **AE attribution** — per-sensor reconstruction error ranked as a % of total MSE
+- **Rule explanation** — plain-English text for each triggered domain rule
+- **Detector summary** — which of the three detectors flagged the row
 
-WIP
+This replaces raw SHAP values with information that is interpretable without ML expertise.
 
 ---
 
-## RAG Knowledge Base
+## LLM Explanation Strategies
 
-WIP
+| Strategy | Prompt content | Use case |
+|---|---|---|
+| Zero-shot | Worst sensor, Z-score, detector agreement | Fastest; no context needed |
+| Contextualised | All sensors, AE attribution, rules, detector summary | Grounded in measurement context |
+| RAG | Contextualised prompt + retrieved KB passages | Adds domain knowledge (failure mechanisms, sensor correlations) |
+
+The RAG knowledge base contains 12 entries covering HDF/TWF/OSF/PWF/RNF mechanisms, autoencoder interpretation guidance, and sensor correlation patterns.
+
+**LLM providers:**
+- **Ollama (local)** — model name contains `:` (e.g. `gemma3:4b`, `llama3.2:3b`)
+- **Groq (cloud)** — model name without `:` (e.g. `llama-3.3-70b-versatile`)
+
 ---
 
-## Evaluation
+## Project Structure
 
-WIP
+```
+.
+├── src/
+│   ├── preprocessing/      # load, clean, feature engineering, normalise
+│   ├── detector/           # zscore, isolation_forest, autoencoder, fusion
+│   ├── explainer/          # prompts, context, rag, llm, shap, export
+│   ├── streaming/          # CSVStreamSimulator, OnlineDetector, StreamingWorker
+│   ├── agents/             # LangGraph nodes, graph definitions, state, store
+│   └── ui/                 # app.py — Streamlit dashboard (entry point)
+├── data/
+│   ├── input/
+│   │   ├── ai4i2020.csv        # Raw source dataset
+│   │   ├── ai4i_clean.csv      # Preprocessed — input to detection & streaming
+│   │   └── ai4i_ranges.json    # Sensor min/max/mean/std for denormalisation
+│   └── output/
+│       ├── ae_ai4i.pt          # Saved autoencoder weights
+│       ├── ai4i_anomaly_records.json
+│       ├── ai4i_explanations.json
+│       └── *.png               # Diagnostic plots
+├── test_notebooks/
+│   ├── data_preprocessing.ipynb
+│   └── anomaly_detection.ipynb
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+└── .env.example
+```
+
 ---
+
+## Setup
+
+### Prerequisites
+
+- Python 3.11+
+- [Ollama](https://ollama.com) running locally **or** a [Groq](https://console.groq.com) API key
+
+### 1. Clone and install
+
+```bash
+git clone <repo-url>
+cd iot-anomaly-detection-xai
+python -m venv env
+source env/bin/activate        # Windows: env\Scripts\activate
+pip install -r requirements.txt
+```
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env`:
+
+```env
+# Local Ollama (default)
+OLLAMA_BASE_URL=http://localhost:11434
+EXPLAINER_MODEL=gemma3:4b
+EMBED_MODEL=nomic-embed-text:latest
+
+# Groq cloud (optional)
+GROQ_API_KEY=your_key_here
+GROQ_MODELS=llama-3.3-70b-versatile,llama-3.1-8b-instant,gemma2-9b-it
+```
+
+### 3. Pull Ollama models (if using local LLM)
+
+```bash
+ollama pull gemma3:4b
+ollama pull nomic-embed-text:latest
+```
+
+---
+
+## Running the Pipeline
+
+### Streamlit dashboard (recommended)
+
+```bash
+streamlit run src/ui/app.py
+```
+
+Opens at `http://localhost:8501`. Use the **Batch Mode** tab for full LangGraph pipeline with operator review, or **Stream Simulation** to watch row-by-row anomaly detection and live explanations.
+
+### Docker (all-in-one with Ollama)
+
+```bash
+docker compose up --build
+```
+
+This starts three services: `ollama` (model server), `ollama-init` (pulls models once), and `streamlit` (app on port 8501). Models are cached in a named volume across restarts.
+
+### Batch pipeline (CLI)
+
+Run the full batch pipeline from the command line without the UI:
+
+```bash
+python -m src.explainer.pipeline
+```
+
+Outputs `data/output/ai4i_explanations.json` with all anomaly records and their three explanations.
+
+### Preprocessing only
+
+```bash
+python -m src.preprocessing.pipeline
+```
+
+Generates `data/input/ai4i_clean.csv` and `data/input/ai4i_ranges.json` from the raw `data/input/ai4i2020.csv`.
+
+### Notebooks
+
+```bash
+jupyter notebook test_notebooks/
+```
+
+- `data_preprocessing.ipynb` — EDA, feature engineering exploration
+- `anomaly_detection.ipynb` — detector development, threshold sweeps, ensemble tuning
+
+--
 
 ## References
 

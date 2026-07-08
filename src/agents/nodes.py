@@ -27,7 +27,7 @@ from src.preprocessing.pipeline import clean, engineer_features, load_raw, norma
 from .state import PipelineState
 from .store import get_resource, set_resource
 
-_AE_PATH = Path('data/ae_ai4i.pt')
+_AE_PATH = Path('data/output/ae_ai4i.pt')
 
 
 def _thread(config: RunnableConfig) -> str:
@@ -221,6 +221,6 @@ def monitor_only_node(state: PipelineState, config: RunnableConfig) -> dict:
 # ── Export ────────────────────────────────────────────────────────────────────
 
 def export_node(state: PipelineState) -> dict:
-    out = save_results(state['completed_results'], Path('data'))
+    out = save_results(state['completed_results'], Path('data/output'))
     print(f'Exported {len(state["completed_results"])} records → {out}')
     return {}
