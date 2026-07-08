@@ -16,11 +16,9 @@ This project builds a human-in-the-loop (HITL) system for IoT sensor anomaly det
 
 ## Research Questions
 
-**RQ1 (primary):** Does providing LLM-generated natural language explanations increase user trust and improve anomaly assessment compared to a system without explanations?
+**RQ1:** How do different prompting strategies (zero-shot, contextualised, RAG) affect explanation quality, measured via LLM-as-Judge?
 
-**RQ2:** How do different prompting strategies (zero-shot, contextualised, RAG) affect explanation quality, measured via LLM-as-Judge?
-
-**RQ3:** How do users perceive the usability and trustworthiness of the HCAI system compared to a baseline?
+**RQ2:** Does grounding LLM explanations in temporal sensor context and domain-rule evidence improve explanation specificity compared to zero-shot prompting?
 
 ---
 
@@ -33,14 +31,16 @@ Raw CSV
             ├─ Z-score (global + rolling-50, threshold 3.0σ)
             ├─ Isolation Forest (200 trees, contamination 0.034)
             └─ Autoencoder (5→10→4→10→5, p95 MSE threshold)
-                 └─ Score Fusion (0.3×Z + 0.4×IF + 0.3×AE, threshold 0.5)
-                      └─ Context Assembly (temporal window, rolling stats, domain rules)
-                           └─ LLM Explainer
-                                ├─ Zero-Shot
-                                ├─ Contextualised
-                                └─ RAG (InMemoryVectorStore, 12 KB entries)
-                                     └─ SHAP (TreeExplainer on IsolationForest)
-                                          └─ Streamlit Dashboard (Batch + Stream tabs)
+                 └─ Score Fusion (⅓×Z + ⅓×IF + ⅓×AE)
+                      ├─ ML path  — combined_score > 0.70 → anomaly
+                      └─ Rule path — HDF ∨ TWF ∨ OSF ∨ PWF → anomaly
+                           └─ Context Assembly (temporal window, rolling stats, domain rules)
+                                └─ LLM Explainer
+                                     ├─ Zero-Shot
+                                     ├─ Contextualised
+                                     └─ RAG (InMemoryVectorStore, 12 KB entries)
+                                          └─ SHAP (TreeExplainer on IsolationForest)
+                                               └─ Streamlit Dashboard (Batch + Stream tabs)
 ```
 
 ---
@@ -66,15 +66,26 @@ Source: AI4I 2020 Predictive Maintenance Dataset [Dataset]. (2020). UCI Machine 
 
 ## Anomaly Detection
 
-Three detectors run in parallel; their scores are fused by weighted average:
+Three statistical detectors run in parallel; their normalised scores are fused with equal weights:
 
 | Detector | Method | Score weight |
 |---|---|---|
-| Z-score | Max of per-sensor global Z and rolling-50 Z | 0.30 |
-| Isolation Forest | Normalised anomaly score (200 trees, contam=0.034) | 0.40 |
-| Autoencoder | Per-row MSE; threshold at p95 of normal-row MSE | 0.30 |
+| Z-score | Max of per-sensor global Z and rolling-50 Z | ⅓ |
+| Isolation Forest | Normalised anomaly score (200 trees, contam=0.034) | ⅓ |
+| Autoencoder | Per-row MSE; threshold at p95 of normal-row MSE | ⅓ |
 
-Combined score ≥ 0.5 → anomaly. Three domain rules (HDF, TWF, OSF) add a `rule_flags` column but do not affect the numeric threshold.
+The anomaly gate has two independent paths:
+- **ML path** — `combined_score > 0.70` flags the row
+- **Rule path** — any of four deterministic domain rules fires independently
+
+| Rule | Condition |
+|---|---|
+| HDF | `temp_diff_k < 8.6 K` AND `rot_speed_rpm < 1380 rpm` |
+| TWF | `200 ≤ tool_wear_min ≤ 240 min` |
+| OSF | `wear_torque > threshold(type)` — L: 11,000 / M: 12,000 / H: 13,000 Nm·min |
+| PWF | `power_w < 3,500 W` OR `power_w > 9,000 W` |
+
+Rule-triggered rows are routed to low-confidence monitoring by the LangGraph confidence layer unless a statistical detector also agrees.
 
 ---
 
@@ -85,8 +96,8 @@ Each anomaly record carries:
 - **Rolling statistics** — median and std over the preceding 50 rows per sensor
 - **Global percentile bands** — p5/p25/p75/p95 over the full dataset
 - **AE attribution** — per-sensor reconstruction error ranked as a % of total MSE
-- **Rule explanation** — plain-English text for each triggered domain rule
-- **Detector summary** — which of the three detectors flagged the row
+- **Rule explanation** — plain-English text for each triggered domain rule (HDF, TWF, OSF, PWF) with sensor values and thresholds
+- **Detector summary** — which statistical detectors and domain rules flagged the row, with agreement level
 
 This replaces raw SHAP values with information that is interpretable without ML expertise.
 
@@ -113,9 +124,10 @@ The RAG knowledge base contains 12 entries covering HDF/TWF/OSF/PWF/RNF mechanis
 ```
 .
 ├── src/
+│   ├── config.py           # central config — all thresholds, hyperparameters, model names
 │   ├── preprocessing/      # load, clean, feature engineering, normalise
 │   ├── detector/           # zscore, isolation_forest, autoencoder, fusion
-│   ├── explainer/          # prompts, context, rag, llm, shap, export
+│   ├── explainer/          # prompts, context, rag, llm, shap, export, KB entries
 │   ├── streaming/          # CSVStreamSimulator, OnlineDetector, StreamingWorker
 │   ├── agents/             # LangGraph nodes, graph definitions, state, store
 │   └── ui/                 # app.py — Streamlit dashboard (entry point)

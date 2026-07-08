@@ -112,15 +112,14 @@ with st.sidebar:
     st.markdown('---')
     st.caption('**Batch mode**')
     st.metric('Records reviewed', st.session_state.record_count)
+    st.toggle('Auto-proceed', key='auto_proceed', value=False)
+    if st.session_state.get('auto_proceed', False):
+        st.slider('Delay (seconds)', min_value=2, max_value=15, value=5, key='auto_delay')
 
     if st.session_state.history:
-        decisions = [r.get('operator_decision') for r in st.session_state.history]
-        st.caption(
-            f"Confirmed: {decisions.count('confirm')} | "
-            f"Rejected: {decisions.count('reject')} | "
-            f"Snoozed: {decisions.count('snooze')} | "
-            f"Auto: {decisions.count('auto_monitor')}"
-        )
+        auto = sum(1 for r in st.session_state.history if r.get('operator_decision') == 'auto_monitor')
+        reviewed = len(st.session_state.history) - auto
+        st.caption(f"Reviewed: {reviewed} | Auto-monitored: {auto}")
 
     st.markdown('---')
     st.caption('**Stream mode**')
@@ -191,7 +190,15 @@ def render_batch_tab() -> None:
 
         if st.button('Start Pipeline', type='primary'):
             with st.spinner('Building knowledge base...'):
-                kb = build_kb(model=EMBED_MODEL)
+                try:
+                    kb = build_kb(model=EMBED_MODEL)
+                except Exception:
+                    kb = None
+                    if provider != 'Groq (cloud)':
+                        st.warning(
+                            'Ollama not reachable — RAG explanations will be skipped. '
+                            'Zero-shot and contextualised still work.'
+                        )
             set_resource(st.session_state.thread_id, 'kb', kb)
             st.session_state.started = True
             _advance_graph({
@@ -262,25 +269,26 @@ def render_batch_tab() -> None:
                 st.write_stream(stream_explanation(prompts.get('rag', ''), model_name))
 
     st.markdown('---')
-    st.subheader('Operator Decision')
-    st.caption('Your decision is logged and the pipeline advances to the next anomaly.')
-    btn1, btn2, btn3 = st.columns(3)
-    if btn1.button('Confirm — anomaly is real',      type='primary', use_container_width=True):
+    if st.session_state.get('auto_proceed', False):
+        _delay = st.session_state.get('auto_delay', 5)
+        _slot = st.empty()
+        for _i in range(_delay, 0, -1):
+            _slot.info(f'Auto-proceeding in {_i}s…  (toggle off in sidebar to pause)')
+            time.sleep(1)
+        _slot.empty()
         _advance_graph(Command(resume='confirm'))
-    if btn2.button('Reject — false positive',                        use_container_width=True):
-        _advance_graph(Command(resume='reject'))
-    if btn3.button('Snooze — monitor, revisit later',                use_container_width=True):
-        _advance_graph(Command(resume='snooze'))
+    else:
+        if st.button('Next Record →', type='primary', use_container_width=True):
+            _advance_graph(Command(resume='confirm'))
 
     if st.session_state.history:
         with st.expander(f'Review history ({len(st.session_state.history)} records)'):
             for r in reversed(st.session_state.history):
-                decision = r.get('operator_decision', '—')
-                icon = {'confirm': '✅', 'reject': '❌', 'snooze': '⏸️',
-                        'auto_monitor': '👁️'}.get(decision, '—')
+                path = r.get('confidence_path', '—')
+                icon = '👁️' if path == 'low' else '🔍'
                 st.caption(
                     f"{icon} Row {r['row_idx']} | {r['failure_type']} | "
-                    f"score={r['combined_score']:.3f} | {r['agreement']} | {decision}"
+                    f"score={r['combined_score']:.3f} | {r['agreement']}"
                 )
 
 
