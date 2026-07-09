@@ -31,6 +31,7 @@ def score_isolation_forest(
         if_flags:  bool array, True where clf predicts anomaly
     """
     raw_scores = clf.score_samples(X)
-    if_scores  = 1 - (raw_scores - raw_scores.min()) / (raw_scores.max() - raw_scores.min())
+    denom      = raw_scores.max() - raw_scores.min() + 1e-9
+    if_scores  = np.clip(1 - (raw_scores - raw_scores.min()) / denom, 0, 1)
     if_flags   = clf.predict(X) == -1
     return if_scores, if_flags

@@ -91,9 +91,9 @@ class StreamingWorker:
             record = self._detector.score_row(row_idx, row)
             status = {
                 'row_idx':        row_idx,
-                'is_anomaly':     record is not None,
-                'combined_score': record['combined_score'] if record else 0.0,
-                'failure_type':   record['failure_type']   if record else 'NORMAL',
+                'is_anomaly':     record['is_anomaly'],
+                'combined_score': record['combined_score'],
+                'failure_type':   record['failure_type'],
             }
 
             with self._lock:
@@ -101,11 +101,11 @@ class StreamingWorker:
                 self.live_feed.append(status)
                 if len(self.live_feed) > 20:
                     self.live_feed.pop(0)
-                if record is not None:
+                if record['is_anomaly']:
                     self.anomalies_found += 1
                     self.pending_count   += 1
 
-            if record is not None:
+            if record['is_anomaly']:
                 row_vals = row[self._sensor_cols].values.astype('float32')
                 self._executor.submit(self._explain, record, row_vals)
 

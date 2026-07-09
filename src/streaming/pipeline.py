@@ -25,7 +25,7 @@ def stream_rows(path: Path) -> Generator[dict, None, None]:
         record = detector.score_row(row_idx, row)
         yield {
             'row_idx':        row_idx,
-            'is_anomaly':     record is not None,
-            'record':         record,
-            'combined_score': record['combined_score'] if record else 0.0,
+            'is_anomaly':     record['is_anomaly'],
+            'record':         record if record['is_anomaly'] else None,
+            'combined_score': record['combined_score'],
         }

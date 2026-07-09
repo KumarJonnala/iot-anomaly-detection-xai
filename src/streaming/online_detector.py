@@ -36,7 +36,7 @@ class OnlineDetector:
             c: deque(maxlen=ROLLING_WINDOW) for c in SENSOR_COLS
         }
 
-        X = df[SENSOR_COLS].values.astype(np.float32)
+        X = df[SENSOR_COLS].values
 
         # Isolation Forest — fit once, store score range for normalisation
         self._clf_if = fit_isolation_forest(X)
@@ -60,8 +60,8 @@ class OnlineDetector:
     def clf_if(self):
         return self._clf_if
 
-    def score_row(self, row_idx: int, row) -> dict | None:
-        """Score one incoming row. Returns an anomaly record dict or None."""
+    def score_row(self, row_idx: int, row) -> dict:
+        """Score one incoming row. Always returns a dict; check 'is_anomaly' to test for alerts."""
         vals = np.array([float(row[c]) for c in self._sensor_cols], dtype=np.float32)
 
         for c in self._sensor_cols:
@@ -79,7 +79,8 @@ class OnlineDetector:
         for c in self._sensor_cols:
             buf = list(self._rolling[c])
             if len(buf) >= 5:
-                zs_dynamic[c] = abs((float(row[c]) - np.mean(buf)) / (np.std(buf) + 1e-9))
+                std = float(np.std(buf, ddof=1)) if len(buf) >= 2 else 0.0
+                zs_dynamic[c] = abs((float(row[c]) - np.mean(buf)) / (std + 1e-9))
             else:
                 zs_dynamic[c] = 0.0
         zscore_dynamic_max = max(zs_dynamic.values())
@@ -113,8 +114,16 @@ class OnlineDetector:
         rule_osf = bool(row.get('rule_osf', False))
         rule_pwf = bool(row.get('rule_pwf', False))
 
-        if not ((combined_score > ML_FUSION_THRESHOLD) or rule_hdf or rule_twf or rule_osf or rule_pwf):
-            return None
+        is_anomaly = (combined_score > ML_FUSION_THRESHOLD) or rule_hdf or rule_twf or rule_osf or rule_pwf
+
+        if not is_anomaly:
+            return {
+                'is_anomaly':     False,
+                'row_idx':        int(row_idx),
+                'combined_score': round(combined_score, 3),
+                'true_label':     int(row['machine_failure']),
+                'failure_type':   str(row.get('failure_type', 'NORMAL')),
+            }
 
         n_agree   = int(zscore_flag) + int(if_flag) + int(ae_flag)
         agreement = {0: 'none', 1: 'one_only', 2: 'two_of_three', 3: 'all_three'}[n_agree]
@@ -125,6 +134,7 @@ class OnlineDetector:
         win_vals = self._df[worst].iloc[start:end].round(4).tolist()
 
         return {
+            'is_anomaly':    True,
             'dataset':       'ai4i',
             'row_idx':       int(row_idx),
             'worst_sensor':  worst,

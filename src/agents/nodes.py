@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import numpy as np
@@ -36,11 +37,21 @@ def _thread(config: RunnableConfig) -> str:
 # ── Stage 1: Preprocessing ────────────────────────────────────────────────────
 
 def preprocess_node(state: PipelineState, config: RunnableConfig) -> dict:
-    raw        = load_raw(Path(state['data_path']))
-    df         = engineer_features(clean(raw))
-    df, ranges = normalise(df)
-    set_resource(_thread(config), 'df', df)   # DataFrame → registry (not serializable)
-    return {'ranges': ranges}                  # ranges dict → state (serializable)
+    path = Path(state['data_path'])
+    raw  = load_raw(path)
+    if 'UDI' in raw.columns or 'Product ID' in raw.columns:
+        df = engineer_features(clean(raw))
+        df, ranges = normalise(df)
+    else:
+        ranges_path = path.parent / 'ai4i_ranges.json'
+        if not ranges_path.exists():
+            df, ranges = normalise(engineer_features(raw))
+        else:
+            with open(ranges_path) as fh:
+                ranges = json.load(fh)
+            df = raw
+    set_resource(_thread(config), 'df', df)
+    return {'ranges': ranges}
 
 
 # ── Stage 2: Anomaly Detection ────────────────────────────────────────────────

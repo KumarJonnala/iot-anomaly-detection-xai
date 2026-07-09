@@ -50,6 +50,8 @@ services:
     volumes:
       # Live-mount data/ so exported results (ai4i_explanations.json) persist on host
       - ./data:/app/data
+      # Live-mount src/ so code changes reflect without rebuilding the image
+      - ./src:/app/src
 
 volumes:
   # Named volume keeps pulled models across docker compose down/up cycles
