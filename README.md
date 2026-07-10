@@ -16,7 +16,7 @@ This project builds a human-in-the-loop (HITL) system for IoT sensor anomaly det
 
 ## Research Questions
 
-**RQ1:** How do different prompting strategies (zero-shot, contextualised, RAG) affect explanation quality, measured via LLM-as-Judge?
+**RQ1:** How do different prompting strategies (zero-shot, contextualised, RAG) affect explanation quality?
 
 **RQ2:** Does grounding LLM explanations in temporal sensor context and domain-rule evidence improve explanation specificity compared to zero-shot prompting?
 
@@ -199,13 +199,13 @@ ollama pull nomic-embed-text:latest
 
 ## Running the Pipeline
 
-### Streamlit dashboard (recommended)
+### Streamlit dashboard
 
 ```bash
 streamlit run src/ui/app.py
 ```
 
-Opens at `http://localhost:8501`. Use the **Batch Mode** tab for full LangGraph pipeline with operator review, or **Stream Simulation** to watch row-by-row anomaly detection and live explanations.
+Opens at `http://localhost:8501`. Use the **Stream Simulation** to watch row-by-row anomaly detection and live explanations.
 
 ### Docker (all-in-one with Ollama)
 
